@@ -204,22 +204,22 @@
     <div class="bottom-box" v-show="!hideBottom">
       <ul class="flex">
         <li>
-          <img src="../../assets/chart/kanban/icon-hjrk.png" />
+          <img src="../../assets/kanban/icon-hjrk.png" />
           <span>户籍人口</span>
           <b>{{ summary.persons }}人</b>
         </li>
         <li>
-          <img src="../../assets/chart/kanban/icon-jzw.png" />
+          <img src="../../assets/kanban/icon-jzw.png" />
           <span>建筑物数量</span>
           <b>{{ summary.buildings }}栋</b>
         </li>
         <li>
-          <img src="../../assets/chart/kanban/icon-fgmj.png" />
+          <img src="../../assets/kanban/icon-fgmj.png" />
           <span>覆盖面积</span>
           <b>{{ summary.areas }}m²</b>
         </li>
         <li>
-          <img src="../../assets/chart/kanban/icon-xmjd.png" />
+          <img src="../../assets/kanban/icon-xmjd.png" />
           <span>项目阶段</span>
           <b>{{ summary.projectStage }}</b>
         </li>
@@ -632,7 +632,7 @@ export default {
   top: 0;
   right: 0;
   bottom: 0;
-  background: #212b3b url(../../assets/chart/kanban/bg.png) top center / 100%
+  background: #212b3b url(../../assets/kanban/bg.png) top center / 100%
     100%;
 }
 .top-box {
@@ -641,7 +641,7 @@ export default {
   top: 0;
   right: 0;
   height: 108px;
-  background: url(../../assets/chart/kanban/top-bg.png) top center;
+  background: url(../../assets/kanban/top-bg.png) top center;
   .title {
     line-height: 90px;
     text-align: center;
