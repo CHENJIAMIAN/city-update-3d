@@ -176,7 +176,7 @@
                         mapStyle: Cesium.BingMapsStyle.AERIAL,
                     })
                     // new Cesium.UrlTemplateImageryProvider({
-                    //   url: `http://t{s}.tianditu.com/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${"d93d0f40401619335e98468b99411aa1"}`,
+                    //   url: `https://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${"d93d0f40401619335e98468b99411aa1"}`,
                     //   enablePickFeatures: false,
                     //   maximumLevel: 20,
                     //   subdomains: ["0", "1", "2", "3", "4", "5", "6", "7"],
@@ -184,7 +184,7 @@
                 );
                 viewer.imageryLayers.addImageryProvider(
                     new Cesium.UrlTemplateImageryProvider({
-                        url: 'http://t{s}.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712',
+                        url: 'https://t{s}.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712',
                         subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
                     })
                 );

@@ -186,7 +186,7 @@ export default {
   mounted() {
     function getTileLayerUrl(tileLayerName) {
       const tk = `d93d0f40401619335e98468b99411aa1`;
-      return `http://t{0-7}.tianditu.com/DataServer?T=${tileLayerName}&x={x}&y={y}&l={z}&tk=${tk}`;
+      return `https://t{0-7}.tianditu.gov.cn/DataServer?T=${tileLayerName}&x={x}&y={y}&l={z}&tk=${tk}`;
     }
 
     // 两个map实例不能引用同一个layer实例,不然会只显示一个

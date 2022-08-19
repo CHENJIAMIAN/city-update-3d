@@ -2,7 +2,7 @@ import { Map } from 'ol';
 import { boundingExtent } from 'ol/extent';
 import { Group } from 'ol/layer';
 
-declare module 'ol' {
+declare module 'ol/' {
     interface Map {
         getLayerByProperty: any;
         getLayersByProperty: any;

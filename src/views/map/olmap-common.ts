@@ -6,7 +6,7 @@ import { XYZ, BingMaps } from 'ol/source';
 function getTileLayerUrl(tileLayerName) {
     const tk = `d93d0f40401619335e98468b99411aa1`;
     // 随机从7个节点获取,负载均衡
-    return `http://t{0-7}.tianditu.com/DataServer?T=${tileLayerName}&x={x}&y={y}&l={z}&tk=${tk}`;
+    return `https://t{0-7}.tianditu.gov.cn/DataServer?T=${tileLayerName}&x={x}&y={y}&l={z}&tk=${tk}`;
 }
 // 天地图矢量图层
 const tdtVec = new TileLayer({
