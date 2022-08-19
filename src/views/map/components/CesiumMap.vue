@@ -32,14 +32,14 @@
     import * as Cesium from 'cesium';
     import 'cesium/Build/Cesium/Widgets/widgets.css';
 
-    import Sandcastle from '@/views/map/sandcastle-toolbox.js';
-    import { MeasureTools } from '@/views/map/cesium-measure.js';
-    import CesiumNavigation from '@/views/map/cesium-navigation-es6/viewerCesiumNavigationMixin.js';
+    import Sandcastle from '@/views/map/sandcastle-toolbox';
+    import { MeasureTools } from '@/views/map/cesium-measure';
+    import CesiumNavigation from '@/views/map/cesium-navigation-es6/viewerCesiumNavigationMixin';
     import FlyPathPanel from '@/views/map/components/FlyPathPanel.vue';
     import {
         googleStateliteUrl,
         arcgisStateliteUrl,
-    } from '@/views/map/olmap-common.js';
+    } from '@/views/map/olmap-common';
     import { map } from '@/views/map/index.vue';
 
     export let viewer = null;

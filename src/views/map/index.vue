@@ -1,5 +1,5 @@
 <template>
-<!--  <map-view
+    <!--  <map-view
             ref="mapVue"
             :showOpenList="$route.name !== 'projectOverview'"
             @openList="drawerList.visible = true"
@@ -370,14 +370,14 @@
         tdtSatelite,
         tdtSateliteNotation,
         getFWSelectedStyleFunc,
-    } from '@/views/map/olmap-common.js';
-    import { defaultBaseLayers } from '@/views/map/olmap-config.js';
+    } from '@/views/map/olmap-common';
+    import { defaultBaseLayers } from '@/views/map/olmap-config';
     import { provinceAndCityData, CodeToText } from 'element-china-area-data';
     import {
         loadGSONToVecLayer2,
         getBuildingFeaByMeasureNum,
         lockViewByExtent,
-    } from './olmap-utils.js';
+    } from './olmap-utils';
 
     import {
         getGeoServerUrlByProjectId,
@@ -394,11 +394,13 @@
     import ToolBox from './components/ToolBox.vue';
     import CesiumMap from './components/CesiumMap.vue';
 
+    import { defineComponent } from 'vue';
+
     // 此处this为undefined
     // 不要放store里，不要被vue劫持，否则性能堪忧
-    export let map = null;
+    export let map: Map;
 
-    export default {
+    export default defineComponent({
         props: {
             showOpenList: {
                 type: Boolean,
@@ -474,7 +476,7 @@
         watch: {
             asKanban: {
                 immediate: true,
-                handler(n) {
+                handler(n: boolean) {
                     if (n) this.showMapType = false;
                 },
             },
@@ -489,7 +491,7 @@
                 get() {
                     // levelType:"city",//"country" //"project"
                     if (
-                        this.$route.path.includes('/businessManage') ||
+                        this.$route.path.includes('/mappage') ||
                         this.$route.path.includes('building/approval') ||
                         this.$route.path.includes('/kanban')
                     ) {
@@ -497,17 +499,19 @@
                     }
                     return 'country';
                 },
+                set() {},
             },
         },
         async mounted() {
             window.mapvue = this;
-
+            this.maptype;
             // 轮询直到获取到项目id,才去请求接口,很多接口需要要那个到项目id
-            const interval1 = setInterval(async (_) => {
+            const interval1 = setInterval(async () => {
                 // 找到项目id时才初始化地图，防止获取不到图层
                 clearInterval(interval1);
 
-                const mapElement = document.querySelector('#olmap');
+                const mapElementId = 'olmap';
+                const mapElement = document.querySelector('#' + mapElementId);
                 tdtVec.setVisible(false);
                 tdtVecNotation.setVisible(false);
                 // 多个组件引用同一个vue组件，这个组件又引用同一个tdtSatelite，始终会造成状态不一致问题
@@ -529,14 +533,14 @@
                                 tdtSateliteNotation /* googleMapLayer */,
                             ],
                             view: this.chinaView,
-                            target: mapElement,
+                            target: mapElementId,
                         });
                 // 为什么缩放或单击地图时不正确/不正确？ https://openlayers.org/en/latest/doc/faq.html
                 const sizeObserver = new ResizeObserver(() => {
                     console.log('ResizeObserver updateSize');
                     map && map.updateSize();
                 });
-                sizeObserver.observe(mapElement);
+                mapElement && sizeObserver.observe(mapElement);
 
                 // levelType根据路由去判断属于项目预览还是首页地图
                 if (this.levelType === 'project') {
@@ -1399,7 +1403,7 @@
                 }).then((res) => {
                     this.$store.commit('app/SET_PROJECT_ID', projectId);
                     // 路由跳到该项目
-                    this.$router.push('/businessManage/projectOverview/index');
+                    this.$router.push('/mappage/projectOverview/index');
                     setTimeout((_) => {
                         location.reload();
                     }, 100);
@@ -1449,7 +1453,7 @@
                 this.maptype = maptype;
             },
         },
-    };
+    });
 </script>
 
 <style lang="scss" scoped>
@@ -1561,7 +1565,7 @@
         height: 69px;
         border: 0;
         border-radius: 50px;
-        background: url(../../assets/businessManage/btn-bg1.png);
+        background: url(../../assets/mappage/btn-bg1.png);
     }
 
     .city-overlay {
@@ -1690,8 +1694,6 @@
     }
 
     .drawer {
-        >>> .el-drawer {
-        }
         >>> .custom-drawer {
             background-color: rgba(255, 255, 255, 0.8);
         }

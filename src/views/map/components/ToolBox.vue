@@ -279,11 +279,11 @@
     import { Stroke, Style } from 'ol/style';
     import { transform } from 'ol/proj';
     import { map } from '@/views/map/index.vue';
-    import { getBuildingFeaByMeasureNum } from '@/views/map/olmap-utils.js';
+    import { getBuildingFeaByMeasureNum } from '@/views/map/olmap-utils';
     import {
         getFWStyleFunc,
         getNoneTextFWStyleFunc,
-    } from '@/views/map/olmap-common.js';
+    } from '@/views/map/olmap-common';
 
     export default {
         components: {},
@@ -314,7 +314,7 @@
                                 onClick: () => {
                                     // this.$route.query.deleteEditFlag = 0;//非响应式
                                     this.$router.push(
-                                        `/businessManage/projectOverview/index?deleteEditFlag=0&measureNum=${measureNum}`
+                                        `/mappage/projectOverview/index?deleteEditFlag=0&measureNum=${measureNum}`
                                     );
                                 },
                             });
@@ -430,7 +430,7 @@
                                                 this.$route.query.measureNum;
                                             // 拿完路由上的测绘编号后,重置路由
                                             this.$router.push(
-                                                `/businessManage/projectOverview/index?deleteEditFlag=1`
+                                                `/mappage/projectOverview/index?deleteEditFlag=1`
                                             );
                                             // 删除成功后
                                             // 如果路由没有传测绘编号进来,说明是先删除的地图要素
@@ -572,7 +572,7 @@
             // 点击进入删除建筑物的状态
             handleDeleteBuildingClick() {
                 this.$router.push(
-                    `/businessManage/projectOverview/index?deleteEditFlag=1`
+                    `/mappage/projectOverview/index?deleteEditFlag=1`
                 );
             },
             handleAddBuildingClick() {

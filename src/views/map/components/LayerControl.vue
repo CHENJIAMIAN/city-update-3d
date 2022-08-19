@@ -519,12 +519,12 @@
         getFWStyleFunc,
         getFWSelectedStyleFunc,
         cssColorNames,
-    } from '@/views/map/olmap-common.js';
+    } from '@/views/map/olmap-common';
     import Feature from 'ol/Feature';
 
     import { Fill, Stroke, Style, Text, Icon } from 'ol/style';
     import { createDefaultStyle, createEditingStyle } from 'ol/style/Style';
-    import { extend } from 'ol/array.js';
+    import { extend } from 'ol/array';
     import GeoJSON from 'ol/format/GeoJSON';
     import { map } from '@/views/map/index.vue';
 

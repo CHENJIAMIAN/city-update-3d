@@ -1,5 +1,5 @@
 <template>
-    <div id="App.vue" style="height:100vh;">
+    <div id="App.vue" style="height: 100vh; width: 100vw">
         <router-view />
     </div>
 </template>
@@ -8,7 +8,7 @@
     export default {
         name: 'App',
         created() {
-            window.appVue = this;
+            // window.appVue = this;
         },
     };
 </script>
