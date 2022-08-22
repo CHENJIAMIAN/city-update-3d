@@ -9,7 +9,6 @@ import 'element-ui/lib/theme-chalk/index.css';
 import './assets/main.css';
 
 import '@/views/map/fix-cesium-bug';
-import '@/views/map/enhance-olmap';
 
 Vue.use(PiniaVuePlugin);
 Vue.use(ElementUI);

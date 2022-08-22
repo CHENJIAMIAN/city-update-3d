@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.11.45",
+    "@types/proj4": "^2.5.2",
     "@vitejs/plugin-legacy": "^2.0.0",
     "@vitejs/plugin-vue2": "^1.1.2",
     "@vitejs/plugin-vue2-jsx": "^1.0.2",

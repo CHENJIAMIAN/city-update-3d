@@ -34,17 +34,19 @@
                     >
                         <div>测绘编号</div>
                         <div>权利人名称</div>
-                        <template v-for="prop in multiSelectedProps">
+                        <template
+                            :key="prop.measureNum"
+                            v-for="prop in multiSelectedProps"
+                        >
                             <div
                                 style="cursor: pointer; color: dodgerblue"
-                                :key="prop.measureNum"
                                 @click.prevent="
                                     $emit('clickBuildingOnMap', prop.measureNum)
                                 "
                             >
                                 {{ prop.measureNum }}
                             </div>
-                            <div :key="prop.measureNum">
+                            <div>
                                 {{ prop.rightPerson }}
                             </div>
                         </template>
@@ -333,7 +335,8 @@
     import { useMapStore } from '@/stores';
     import 'ol/ol.css';
 
-    import Map from 'ol/Map';
+    import Map from '@/views/map/enhance-olmap';
+    // import Map from 'ol/Map';
     import View from 'ol/View';
     import { platformModifierKeyOnly, click } from 'ol/events/condition';
     import {
@@ -442,11 +445,22 @@
                 zoom: 5,
             });
             this.map = map;
+            let cityFeasPropsThatHasManyProj: any[] = [];
+            let projectFeasProps: any[] = [];
+            let multiSelectedProps: any[] = [];
+            let searchOptions: any[] = [];
+            let projInfo: any = {};
+
             return {
+                is3D: false,
+                projInfo,
+                multiSelectedProps,
+                projectFeasProps,
+                cityFeasPropsThatHasManyProj,
                 isUnLockViewByExtent: true,
                 //
                 showLayerControl2: true,
-                searchOptions: [],
+                searchOptions,
                 searchLoading: false,
                 searchNoDataText: '',
                 //
@@ -460,16 +474,11 @@
                 },
                 zoomLevel: 0,
                 maptype: '影像图层',
-                projInfo: {},
-                multiSelectedProps: [],
                 showStatistics: false, // 是否显示统计对比组件
                 statisticsId: '', // 统计对比组件显示的内容
                 // 地块对象列表,从api获取,传给LayerControl
                 baseLayers: [],
                 grounds: [],
-                is3D: false,
-                projectFeasProps: [],
-                cityFeasPropsThatHasManyProj: [],
                 searchMeasureNumVal: '',
             };
         },
@@ -597,11 +606,11 @@
                                     if (source.getState() === 'ready') {
                                         this.isUnLockViewByExtent = false;
                                         buildingL
-                                            .getSource()
-                                            .un('change', listener);
+                                            ?.getSource()
+                                            ?.un('change', listener);
                                     }
                                 };
-                                buildingL.getSource().on('change', listener);
+                                buildingL?.getSource()?.on('change', listener);
                             } else if (
                                 layername.includes(
                                     'jitang_2009erdiaodixingceng'
@@ -692,7 +701,7 @@
                                 source: new WMTS(options),
                             });
                             imgL && map.addLayer(imgL);
-                            this.$on('hook:destroyed', (_) => {
+                            this.$on('hook:destroyed', () => {
                                 imgL = null;
                             });
                         } else {
@@ -700,7 +709,7 @@
                         }
                     });
                     // 中山总规图特别适配一个图例
-                    const interval2 = setInterval((_) => {
+                    const interval2 = setInterval(() => {
                         const tgL = map?.getLayerByProperty(
                             'name',
                             'quanyan_tg'
@@ -844,7 +853,7 @@
                             // 超过1个项目,旁边显示项目列表,cityFeasProps动态绑定了overlay的元素
                             // 用来构造overlay
                             // 获取每个城市的详情
-                            this.$nextTick((_) => {
+                            this.$nextTick(() => {
                                 // 这里才能获取到element
                                 this.cityFeasPropsThatHasManyProj.forEach(
                                     (cityFeasProps, index) => {
@@ -898,7 +907,7 @@
                                         })
                                     );
                                 // 添加overlay介绍项目信息
-                                this.$nextTick((_) => {
+                                this.$nextTick(() => {
                                     this.projectFeasProps.forEach(
                                         (projFeaProps) => {
                                             // 获取要素中心
@@ -1298,10 +1307,7 @@
                                 }
                             ),
                         });
-                        this.$on(
-                            'hook:destroyed',
-                            (_) => (vectorSource = null)
-                        );
+                        this.$on('hook:destroyed', () => (vectorSource = null));
                         const layer = new VectorLayer({
                             zIndex: 10,
                             name: ground.layerName,
@@ -1348,7 +1354,7 @@
                             let vectorSource = new VectorSource();
                             this.$on(
                                 'hook:destroyed',
-                                (_) => (vectorSource = null)
+                                () => (vectorSource = null)
                             );
                             const layer = new VectorLayer({
                                 name: groundName,
@@ -1404,7 +1410,7 @@
                     this.$store.commit('app/SET_PROJECT_ID', projectId);
                     // 路由跳到该项目
                     this.$router.push('/mappage/projectOverview/index');
-                    setTimeout((_) => {
+                    setTimeout(() => {
                         location.reload();
                     }, 100);
                 });
@@ -1424,7 +1430,7 @@
                     this.showFlyCesiumMap = false;
                     // // 让组件重载,会造成多个容器混乱,原因未知
                     // this.showCesiumMap = false;
-                    // this.$nextTick((_) => (this.showCesiumMap = true));
+                    // this.$nextTick(() => (this.showCesiumMap = true));
                 } else if (maptype == '飞行漫游') {
                     this.is3D = true;
                     this.showFlyCesiumMap = true;

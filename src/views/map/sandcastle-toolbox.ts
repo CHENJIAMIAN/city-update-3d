@@ -1,41 +1,51 @@
-'use strict';
-var defaultAction;
+type Option = { text: string; onselect: () => void; value?: string }[];
+
+var defaultAction: () => void;
 // 官网sandcastle-header.js 魔改而来,用来方便地添加调试按钮,菜单
 export default {
-  // 添加一个checkbox
-  addToggleButton: function (text, checked, onchange, toolbarID) {
-    var input = document.createElement('input');
-    input.checked = checked;
-    input.type = 'checkbox';
-    input.style.pointerEvents = 'none';
-    var label = document.createElement('label');
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(text));
-    label.style.pointerEvents = 'none';
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'cesium-button';
-    button.appendChild(label);
+    // 添加一个checkbox
+    addToggleButton: function (
+        text: string,
+        checked: boolean,
+        onchange: (isChecked: boolean) => void,
+        toolbarID: string
+    ) {
+        var input = document.createElement('input');
+        input.checked = checked;
+        input.type = 'checkbox';
+        input.style.pointerEvents = 'none';
+        var label = document.createElement('label');
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(text));
+        label.style.pointerEvents = 'none';
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cesium-button';
+        button.appendChild(label);
 
-    button.onclick = function () {
-      input.checked = !input.checked;
-      onchange(input.checked);
-    };
+        button.onclick = function () {
+            input.checked = !input.checked;
+            onchange(input.checked);
+        };
 
-    document.getElementById(toolbarID || 'toolbar').appendChild(button);
-  },
-  // 添加一个button
-  addToolbarButton: function (text, onclick, toolbarID) {
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'cesium-button';
-    button.onclick = function () {
-      onclick();
-    };
-    button.textContent = text;
-    document.getElementById(toolbarID || 'toolbar').appendChild(button);
-  },
-  /* 添加下拉菜单
+        document.getElementById(toolbarID || 'toolbar')?.appendChild(button);
+    },
+    // 添加一个button
+    addToolbarButton: function (
+        text: string,
+        onclick: () => void,
+        toolbarID: string
+    ) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cesium-button';
+        button.onclick = function () {
+            onclick();
+        };
+        button.textContent = text;
+        document.getElementById(toolbarID || 'toolbar')?.appendChild(button);
+    },
+    /* 添加下拉菜单
   Sandcastle.addToolbarMenu([
 {
   text: "Color By Height",
@@ -69,43 +79,47 @@ export default {
 },
 ]);
    */
-  addToolbarMenu: function (options, toolbarID) {
-    var menu = document.createElement('select');
-    menu.className = 'cesium-button';
-    menu.onchange = function () {
-      var item = options[menu.selectedIndex];
-      if (item && typeof item.onselect === 'function') {
-        item.onselect();
-      }
-    };
-    document.getElementById(toolbarID || 'toolbar').appendChild(menu);
+    addToolbarMenu: function (options: Option, toolbarID: string) {
+        var menu = document.createElement('select');
+        menu.className = 'cesium-button';
+        menu.onchange = function () {
+            var item = options[menu.selectedIndex];
+            if (item && typeof item.onselect === 'function') {
+                item.onselect();
+            }
+        };
+        document.getElementById(toolbarID || 'toolbar')?.appendChild(menu);
 
-    if (!defaultAction && typeof options[0].onselect === 'function') {
-      defaultAction = options[0].onselect;
-    }
+        if (!defaultAction && typeof options[0].onselect === 'function') {
+            defaultAction = options[0].onselect;
+        }
 
-    for (var i = 0, len = options.length; i < len; ++i) {
-      var option = document.createElement('option');
-      option.textContent = options[i].text;
-      option.value = options[i].value;
-      menu.appendChild(option);
-    }
-  },
-  // 添加一个默认button,它在调用executeDeault()时被调用一遍监听函数,而不用手动点击按钮时
-  addDefaultToolbarButton: function (text, onclick, toolbarID) {
-    this.addToolbarButton(text, onclick, toolbarID);
-    defaultAction = onclick;
-  },
-  // 添加一个默认下拉菜单,它在调用executeDeault()时被调用一遍第一个选项被选中的监听函数,而不用手动选择时才执行
-  addDefaultToolbarMenu: function (options, toolbarID) {
-    this.addToolbarMenu(options, toolbarID);
-    defaultAction = options[0].onselect;
-  },
-  // 执行默认DefaultToolbarButton 或 DefaultToolbarMenu
-  executeDeault: function () {
-    if (defaultAction) {
-      defaultAction();
-      defaultAction = undefined;
-    }
-  },
+        for (var i = 0, len = options.length; i < len; ++i) {
+            var option = document.createElement('option');
+            option.textContent = options[i].text;
+            option.value = options[i].value || '';
+            menu.appendChild(option);
+        }
+    },
+    // 添加一个默认button,它在调用executeDeault()时被调用一遍监听函数,而不用手动点击按钮时
+    addDefaultToolbarButton: function (
+        text: string,
+        onclick: () => void,
+        toolbarID: string
+    ) {
+        this.addToolbarButton(text, onclick, toolbarID);
+        defaultAction = onclick;
+    },
+    // 添加一个默认下拉菜单,它在调用executeDeault()时被调用一遍第一个选项被选中的监听函数,而不用手动选择时才执行
+    addDefaultToolbarMenu: function (options: Option, toolbarID: string) {
+        this.addToolbarMenu(options, toolbarID);
+        defaultAction = options[0].onselect;
+    },
+    // 执行默认DefaultToolbarButton 或 DefaultToolbarMenu
+    executeDeault: function () {
+        if (defaultAction) {
+            defaultAction();
+            defaultAction = () => {};
+        }
+    },
 };

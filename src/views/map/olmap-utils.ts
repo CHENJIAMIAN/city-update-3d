@@ -10,7 +10,7 @@ import type Feature from 'ol/Feature';
 
 import type { Vector as VectorLayer } from 'ol/layer';
 import type { Extent } from 'ol/extent';
-import type OlMap from 'ol/map';
+import type OlMap from '@/views/map/enhance-olmap';
 
 // Map([[key1,value1],[key2,value2]])
 const layerColorMap = new Map([
@@ -210,7 +210,10 @@ const layerColorMap = new Map([
     ['rgb(255,127,0)', ['地貌线']],
 ]);
 
-function getLayerColor(layerColorMap, layername) {
+function getLayerColor(
+    layerColorMap: Map<string, string[]>,
+    layername: string
+) {
     for (let [k, v] of layerColorMap) {
         if (v.includes(layername)) {
             return k;
@@ -218,11 +221,11 @@ function getLayerColor(layerColorMap, layername) {
     }
 }
 
-function getStyleFunc(layername) {
+function getStyleFunc(layername: string) {
     let styleFunction = undefined;
     const color = getLayerColor(layerColorMap, layername);
     if (color)
-        return function (fea) {
+        return function (fea: Feature) {
             return new Style({
                 stroke: new Stroke({
                     color: color,
@@ -231,7 +234,7 @@ function getStyleFunc(layername) {
             });
         };
     // 后续项目改成根据要素的Layer属性字段去适配,如此,一个标注图层,一个线图层即可模拟cad效果
-    const getCADLineStyleFunc = (fea) => {
+    const getCADLineStyleFunc = (fea: Feature) => {
         const { layer, color: colorIndex } = fea.getProperties();
         const color = getLayerColor(layerColorMap, layer);
         return color
@@ -243,7 +246,7 @@ function getStyleFunc(layername) {
               })
             : undefined;
     };
-    const getCADPointLableStyleFunc = (fea) => {
+    const getCADPointLableStyleFunc = (fea: Feature) => {
         const { layer, color: colorIndex, text, txtjust } = fea.getProperties();
         const color = getLayerColor(layerColorMap, layer);
         return new Style({
@@ -258,15 +261,15 @@ function getStyleFunc(layername) {
     };
 
     if (layername.includes('_Annotation')) {
-        styleFunction = function (fea) {
+        styleFunction = function (fea: Feature) {
             return getCADPointLableStyleFunc(fea);
         };
     } else if (layername.includes('_Polyline')) {
-        styleFunction = function (fea) {
+        styleFunction = function (fea: Feature) {
             return getCADLineStyleFunc(fea);
         };
     } else if (layername.includes('_fanwei')) {
-        styleFunction = function (fea) {
+        styleFunction = function (fea: Feature) {
             return new Style({
                 stroke: new Stroke({
                     color: 'red',
@@ -275,7 +278,7 @@ function getStyleFunc(layername) {
             });
         };
     } else if (layername == 'project') {
-        styleFunction = function (feature) {
+        styleFunction = function (feature: Feature) {
             return new Style({
                 stroke: new Stroke({ width: 2, color: 'lightblue' }),
                 fill: new Fill({ color: '#0074c759' }),
@@ -293,7 +296,7 @@ function getStyleFunc(layername) {
             });
         };
     } else if (layername.includes('_fw') || layername.includes('_fsw')) {
-        styleFunction = function (fea) {
+        styleFunction = function (fea: Feature) {
             return getFWStyleFunc(fea);
         };
     }
@@ -307,6 +310,13 @@ export function loadGSONToVecLayer({
     zIndex,
     visible,
     minZoom,
+}: {
+    flag: boolean;
+    gsonUrl: string;
+    layername: string;
+    zIndex: number;
+    visible: boolean;
+    minZoom: number;
 }) {
     var vectorSource = new VectorSource({
         url: gsonUrl,
@@ -315,13 +325,13 @@ export function loadGSONToVecLayer({
     return new VectorImage({
         name: layername,
         source: vectorSource,
-        style: getStyleFunc(layername),
+        style: getStyleFunc(layername) as any,
         imageRatio: 2,
         minZoom,
         visible,
         zIndex,
         flag,
-    });
+    } as Options<VectorSource<Geometry>>);
 }
 
 export function loadGSONToVecLayer2({

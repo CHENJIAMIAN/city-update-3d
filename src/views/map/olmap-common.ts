@@ -1,9 +1,11 @@
 import { Fill, Stroke, Style, Text } from 'ol/style';
 import { Tile as TileLayer } from 'ol/layer';
+import type { Options } from 'ol/layer/BaseTile';
 import { XYZ, BingMaps } from 'ol/source';
+import type { Feature } from 'ol';
 
 /*底图图层---------------------------------------------------------------------------------------*/
-function getTileLayerUrl(tileLayerName) {
+function getTileLayerUrl(tileLayerName: string) {
     const tk = `d93d0f40401619335e98468b99411aa1`;
     // 随机从7个节点获取,负载均衡
     return `https://t{0-7}.tianditu.gov.cn/DataServer?T=${tileLayerName}&x={x}&y={y}&l={z}&tk=${tk}`;
@@ -15,7 +17,7 @@ const tdtVec = new TileLayer({
     source: new XYZ({
         url: getTileLayerUrl('vec_w'),
     }),
-});
+} as Options<XYZ>);
 // 天地图矢量图层注记
 const tdtVecNotation = new TileLayer({
     title: '天地图矢量图层注记',
@@ -23,7 +25,7 @@ const tdtVecNotation = new TileLayer({
     source: new XYZ({
         url: getTileLayerUrl('cva_w'),
     }),
-});
+} as Options<XYZ>);
 
 // x=106839&y=57181&z=17
 // 可用
@@ -45,7 +47,7 @@ const tdtSatelite = new TileLayer({
         url: getTileLayerUrl('img_w'),
         maxZoom: 18,
     }),
-});
+} as Options<XYZ>);
 // new TileLayer({
 //     title: "天地图影像图层",
 //     name: "影像图层",
@@ -64,7 +66,7 @@ const tdtSateliteNotation = new TileLayer({
     source: new XYZ({
         url: getTileLayerUrl('cia_w'),
     }),
-});
+} as Options<XYZ>);
 const googleMapLayer = new TileLayer({
     name: '谷歌图层',
     source: new XYZ({
@@ -76,7 +78,7 @@ const googleMapLayer = new TileLayer({
         /* 【国际版】卫星：正确 地图：偏移 */
         /* 【中国版】卫星：偏移 地图：偏移 */
     }),
-});
+} as Options<XYZ>);
 /*---------------------------------------------------------------------------------------*/
 
 /*样式---------------------------------------------------------------------------------------*/
@@ -108,7 +110,7 @@ export const defaultSelectedPolygonStyle = [
     }),
 ];
 
-export const getFWSelectedStyleFunc = (fea) => {
+export const getFWSelectedStyleFunc = (fea: Feature) => {
     const props = fea.getProperties();
     const fwbh = props.fwbh || props['测绘编号'];
     return new Style({
@@ -129,7 +131,7 @@ export const getFWSelectedStyleFunc = (fea) => {
     });
 };
 
-export const getFWStyleFunc = (fea) => {
+export const getFWStyleFunc = (fea: Feature) => {
     const props = fea.getProperties();
     const fwbh = props.fwbh || props['测绘编号'];
     return new Style({
@@ -145,7 +147,7 @@ export const getFWStyleFunc = (fea) => {
     });
 };
 
-export const getNoneTextFWStyleFunc = (fea) => {
+export const getNoneTextFWStyleFunc = (fea: Feature) => {
     const props = fea.getProperties();
     return new Style({
         fill,
