@@ -247,11 +247,264 @@
 <script lang="ts">
     import mapView from '@/views/map/index.vue';
     import CesiumMap from '@/views/map/components/CesiumMap.vue';
+    import { defineComponent } from 'vue';
 
-    export default {
+    export default defineComponent({
         components: { mapView, CesiumMap },
         data() {
+            const leftData1: any = {
+                yAxisName: '栋',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                ],
+            };
+            const leftData2: any = {
+                yAxisName: '人',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '',
+                        type: 'line',
+                        data: [],
+                        symbol: 'circle',
+                        itemStyle: {
+                            color: 'rgba(61,97,245)',
+                        },
+                        areaStyle: {
+                            color: {
+                                x: 1,
+                                y: 1,
+                                colorStops: [
+                                    {
+                                        offset: 0,
+                                        color: 'rgba(61,97,245,0)',
+                                    },
+                                    {
+                                        offset: 1,
+                                        color: 'rgba(61,97,245,.5)',
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            };
+            const leftData3: any = {
+                yAxisName: '人',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '观望',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '不同意见',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '同意(已签约)',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '同意(未签约)',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                ],
+            };
+            const rightData1: any = {
+                yAxisName: '栋',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                ],
+            };
+            const rightData2: any = {
+                yAxisName: '栋',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '',
+                        type: 'line',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        symbol: 'circle',
+                        itemStyle: {
+                            color: 'rgba(61,97,245)',
+                        },
+                        areaStyle: {
+                            color: {
+                                x: 1,
+                                y: 1,
+                                colorStops: [
+                                    {
+                                        offset: 0,
+                                        color: 'rgba(61,97,245,0)',
+                                    },
+                                    {
+                                        offset: 1,
+                                        color: 'rgba(61,97,245,.5)',
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    // {
+                    //   name: "",
+                    //   type: "line",
+                    //   data: [],
+                    //   symbol: "circle",
+                    //   itemStyle: {
+                    //     color: "rgba(229,55,75,1)",
+                    //   },
+                    //   areaStyle: {
+                    //     color: {
+                    //       x: 1,
+                    //       y: 1,
+                    //       colorStops: [
+                    //         { offset: 0, color: "rgba(229,55,75,0)" },
+                    //         { offset: 1, color: "rgba(229,55,75,.5)" },
+                    //       ],
+                    //     },
+                    //   },
+                    // },
+                ],
+            };
+            const rightData3: any = {
+                yAxisName: '人',
+                xAxisData: [],
+                series: [
+                    {
+                        name: '观望',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '不同意见',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '同意(已签约)',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                    {
+                        name: '同意(未签约)',
+                        type: 'bar',
+                        barWidth: '20%',
+                        data: [],
+                        label: {
+                            show: true,
+                            position: 'top',
+                            color: '#fff',
+                        },
+                        itemStyle: {
+                            barBorderRadius: [5, 5, 0, 0],
+                        },
+                    },
+                ],
+            };
+            let summary: any = {};
             return {
+                summary,
                 hideTop: false,
                 hideBottom: false,
                 hideLeft: false,
@@ -264,261 +517,16 @@
                 },
                 nowDate: '',
                 nowTime: '',
-                summary: {},
-                leftCount1: '',
-                leftCount2: '',
-                rightCount1: '',
-                rightCount2: '',
-                leftData1: {
-                    yAxisName: '栋',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                    ],
-                },
-                leftData2: {
-                    yAxisName: '人',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '',
-                            type: 'line',
-                            data: [],
-                            symbol: 'circle',
-                            itemStyle: {
-                                color: 'rgba(61,97,245)',
-                            },
-                            areaStyle: {
-                                color: {
-                                    x: 1,
-                                    y: 1,
-                                    colorStops: [
-                                        {
-                                            offset: 0,
-                                            color: 'rgba(61,97,245,0)',
-                                        },
-                                        {
-                                            offset: 1,
-                                            color: 'rgba(61,97,245,.5)',
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    ],
-                },
-                leftData3: {
-                    yAxisName: '人',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '观望',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '不同意见',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '同意(已签约)',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '同意(未签约)',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                    ],
-                },
-                rightData1: {
-                    yAxisName: '栋',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                    ],
-                },
-                rightData2: {
-                    yAxisName: '栋',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '',
-                            type: 'line',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            symbol: 'circle',
-                            itemStyle: {
-                                color: 'rgba(61,97,245)',
-                            },
-                            areaStyle: {
-                                color: {
-                                    x: 1,
-                                    y: 1,
-                                    colorStops: [
-                                        {
-                                            offset: 0,
-                                            color: 'rgba(61,97,245,0)',
-                                        },
-                                        {
-                                            offset: 1,
-                                            color: 'rgba(61,97,245,.5)',
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                        // {
-                        //   name: "",
-                        //   type: "line",
-                        //   data: [],
-                        //   symbol: "circle",
-                        //   itemStyle: {
-                        //     color: "rgba(229,55,75,1)",
-                        //   },
-                        //   areaStyle: {
-                        //     color: {
-                        //       x: 1,
-                        //       y: 1,
-                        //       colorStops: [
-                        //         { offset: 0, color: "rgba(229,55,75,0)" },
-                        //         { offset: 1, color: "rgba(229,55,75,.5)" },
-                        //       ],
-                        //     },
-                        //   },
-                        // },
-                    ],
-                },
-                rightData3: {
-                    yAxisName: '人',
-                    xAxisData: [],
-                    series: [
-                        {
-                            name: '观望',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '不同意见',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '同意(已签约)',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                        {
-                            name: '同意(未签约)',
-                            type: 'bar',
-                            barWidth: '20%',
-                            data: [],
-                            label: {
-                                show: true,
-                                position: 'top',
-                                color: '#fff',
-                            },
-                            itemStyle: {
-                                barBorderRadius: [5, 5, 0, 0],
-                            },
-                        },
-                    ],
-                },
+                leftCount1: 0,
+                leftCount2: 0,
+                rightCount1: 0,
+                rightCount2: 0,
+                leftData1,
+                leftData2,
+                leftData3,
+                rightData1,
+                rightData2,
+                rightData3,
                 dialogEnlarge: {
                     visible: false,
                     title: '',
@@ -533,19 +541,19 @@
             };
         },
         created() {
-            /* 
-    this.getSummaryData();
-    this.getLeftData1();
-    this.getLeftData2();
-    this.getLeftData3();
-    this.getRightData1();
-    this.getRightData2();
-    this.getRightData3();
-    kanbanQueryKanbanBG().then((r) => (this.bgUrl = r.data?.filePath));
-   */
+            /*
+     this.getSummaryData();
+     this.getLeftData1();
+     this.getLeftData2();
+     this.getLeftData3();
+     this.getRightData1();
+     this.getRightData2();
+     this.getRightData3();
+     kanbanQueryKanbanBG().then((r) => (this.bgUrl = r.data?.filePath));
+    */
         },
         methods: {
-            handleEnlarge(type) {
+            handleEnlarge(type: string) {
                 if (type === 'left1') {
                     this.dialogEnlarge.title = '建筑物累计详查数据';
                     this.dialogEnlarge.data = this.leftData1;
@@ -568,13 +576,11 @@
                 this.dialogEnlarge.visible = true;
             },
             // 附件上传成功
-            uploadSuccess(response, file, fileList) {
+            uploadSuccess(response: any) {
                 if (response.res === '0') {
-                    this.$refs.upload.clearFiles();
+                    (this.$refs.upload as any).clearFiles();
                     this.$message.success('背景上传成功!');
-                    kanbanQueryKanbanBG().then(
-                        (r) => (this.bgUrl = r.data?.filePath)
-                    );
+                    this.bgUrl = '';
                 } else {
                     this.$message.error(response.msg);
                 }
@@ -582,64 +588,110 @@
             // 看板时间
             // 摘要数据
             getSummaryData() {
-                getKanbanStat().then((res) => {
-                    this.summary = res.data;
-                });
+                this.summary = {
+                    persons: 5,
+                    projectStage: '居民交楼',
+                    buildings: 18,
+                    areas: '0',
+                    groundPrice: '8000',
+                };
             },
             // 左边图表1
             getLeftData1() {
-                getKanBuildingTotal().then((res) => {
-                    this.leftData1.xAxisData = res.data.name;
-                    this.leftData1.series[0].data = res.data.valList;
-                    this.leftCount1 = res.data.countTotal;
-                });
+                this.leftData1.xAxisData = [];
+                this.leftData1.series[0].data = 0;
+                this.leftCount1 = 0;
             },
             // 左边图表2
             getLeftData2() {
-                getKanCompensationDeal().then((res) => {
-                    this.leftData2.xAxisData = res.data.name;
-                    this.leftData2.series[0].data = res.data.yesVal;
-                    this.leftCount2 = res.data.countTotal;
-                });
+                const res = {
+                    res: '0',
+                    msg: '操作成功',
+                    data: {
+                        yesVal: ['0', '0', '0', '0', '0', '0', '0'],
+                        name: [
+                            '17号',
+                            '18号',
+                            '19号',
+                            '20号',
+                            '21号',
+                            '22号',
+                            '23号',
+                        ],
+                        countTotal: 2,
+                    },
+                };
+                this.leftData2.xAxisData = res.data.name;
+                this.leftData2.series[0].data = res.data.yesVal;
+                this.leftCount2 = res.data.countTotal;
             },
             // 左边图表3
             getLeftData3() {
-                getKanbanAspiration().then((res) => {
-                    this.leftData3.xAxisData = res.data.name;
-                    this.leftData3.series[0].data = res.data.nonSupport;
-                    this.leftData3.series[1].data = res.data.lookOn;
-                    this.leftData3.series[2].data = res.data.support;
-                    this.leftData3.series[3].data = res.data.supportNo;
-                });
+                const res = {
+                    res: '0',
+                    msg: '操作成功',
+                    data: {
+                        supportNo: [1, 0],
+                        nonSupport: [1, 0],
+                        lookOn: [0, 1],
+                        name: ['1', '2'],
+                        support: [1, 0],
+                    },
+                };
+                this.leftData3.xAxisData = res.data.name;
+                this.leftData3.series[0].data = res.data.nonSupport;
+                this.leftData3.series[1].data = res.data.lookOn;
+                this.leftData3.series[2].data = res.data.support;
+                this.leftData3.series[3].data = res.data.supportNo;
             },
             // 右边图表1
             getRightData1() {
-                getKanDeliverySchedule().then((res) => {
-                    this.rightData1.xAxisData = res.data.name;
-                    this.rightData1.series[0].data = res.data.valList;
-                    this.rightCount1 = res.data.countTotal;
-                });
+                const res = {
+                    res: '0',
+                    msg: '操作成功',
+                    data: {
+                        valList: [0, 0, 0, 0, 0, 0, 0],
+                        name: [
+                            '17号',
+                            '18号',
+                            '19号',
+                            '20号',
+                            '21号',
+                            '22号',
+                            '23号',
+                        ],
+                        countTotal: 0,
+                    },
+                };
+                this.rightData1.xAxisData = res.data.name;
+                this.rightData1.series[0].data = res.data.valList;
+                this.rightCount1 = res.data.countTotal;
             },
             // 右边图表2
             getRightData2() {
-                getKanDismantle().then((res) => {
-                    this.rightData2.xAxisData = res.data.name;
-                    this.rightData2.series[0].data = res.data.valList;
-                    this.rightCount2 = res.data.countTotal;
-                });
+                const res = {
+                    res: '0',
+                    msg: '操作成功',
+                    data: {
+                        valList: [0, 0, 0, 0, 0, 0],
+                        name: ['三月', '四月', '五月', '六月', '七月', '八月'],
+                        countTotal: 0,
+                    },
+                };
+                this.rightData2.xAxisData = res.data.name;
+                this.rightData2.series[0].data = res.data.valList;
+                this.rightCount2 = res.data.countTotal;
             },
             // 右边图表3
             getRightData3() {
-                getKanbanAspirationNow().then((res) => {
-                    this.rightData3.xAxisData = res.data.name;
-                    this.rightData3.series[0].data = res.data.nonSupport;
-                    this.rightData3.series[1].data = res.data.lookOn;
-                    this.rightData3.series[2].data = res.data.support;
-                    this.rightData3.series[3].data = res.data.supportNo;
-                });
+                this.rightData3.xAxisData = [];
+                this.rightData3.series[0].data = 0;
+                this.rightData3.series[1].data = 0;
+                this.rightData3.series[2].data = 0;
+                this.rightData3.series[3].data = 0;
             },
         },
-    };
+    });
 </script>
 
 <style lang="scss" scoped>

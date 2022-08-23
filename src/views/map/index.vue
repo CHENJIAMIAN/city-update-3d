@@ -34,11 +34,9 @@
                     >
                         <div>测绘编号</div>
                         <div>权利人名称</div>
-                        <template
-                            :key="prop.measureNum"
-                            v-for="prop in multiSelectedProps"
-                        >
+                        <template v-for="prop in multiSelectedProps">
                             <div
+                                :key="prop.measureNum"
                                 style="cursor: pointer; color: dodgerblue"
                                 @click.prevent="
                                     $emit('clickBuildingOnMap', prop.measureNum)
@@ -179,8 +177,8 @@
             >
                 <span>影像图层</span>
             </div>
+                <!-- v-loading="isUnLockViewByExtent" -->
             <div
-                v-loading="isUnLockViewByExtent"
                 class="aerial-photography"
                 :class="{ active: maptype == '航拍实景' }"
                 @click="mapChange('航拍实景')"
@@ -290,7 +288,7 @@
         </div>
 
         <!-- 对比统计组件 -->
-        <project-chart :isShow.sync="showStatistics" :typeId="statisticsId" />
+        <!-- <projectChart :isShow.sync="showStatistics" :typeId="statisticsId" /> -->
 
         <!-- 拆赔预算 -->
         <el-drawer
@@ -389,7 +387,7 @@
     } from './mockdata';
 
     import DisburseBudget from '@/views/map/components/DisburseBudget.vue';
-    import projectChart from '@/views/chart/projectChart.vue';
+    // import projectChart from '@/views/chart/projectChart.vue';
     import MeasurePanel from './components/MeasurePanel.vue';
     import LayerControl from './components/LayerControl.vue';
     import DrawPolygon from './components/DrawPolygon.vue';
@@ -433,7 +431,7 @@
             DrawPolygon,
             CompareMap,
             CesiumMap,
-            projectChart,
+            // projectChart,
             DisburseBudget,
         },
         data() {
@@ -1425,7 +1423,7 @@
                 this.$refs.twoMap.style.background = 'initial';
 
                 if (maptype == '航拍实景') {
-                    if (this.isUnLockViewByExtent) return;
+                    // if (this.isUnLockViewByExtent) return;
                     this.is3D = true;
                     this.showFlyCesiumMap = false;
                     // // 让组件重载,会造成多个容器混乱,原因未知

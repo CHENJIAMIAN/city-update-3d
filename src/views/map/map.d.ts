@@ -18,6 +18,8 @@ declare module 'vue' {
         $route: any;
         baseLayers: any;
         $router: Router;
+        $message: any;
+        $store: any;
     }
 }
 

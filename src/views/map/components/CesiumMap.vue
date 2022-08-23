@@ -25,11 +25,19 @@
     </div>
 </template>
 
-<script lang="ts">    import { mapState } from 'pinia';
+<script lang="ts">
+    import { mapState } from 'pinia';
     import { useMapStore } from '@/stores';
     import { getCenter } from 'ol/extent';
     import { transform } from 'ol/proj';
     import * as Cesium from 'cesium';
+    import type {
+        Cartographic,
+        Viewer,
+        Entity,
+        Cartesian3,
+        ScreenSpaceEventHandler,
+    } from 'cesium';
     import 'cesium/Build/Cesium/Widgets/widgets.css';
 
     import Sandcastle from '@/views/map/sandcastle-toolbox';
@@ -41,9 +49,10 @@
         arcgisStateliteUrl,
     } from '@/views/map/olmap-common';
     import { map } from '@/views/map/index.vue';
+    import { defineComponent } from 'vue';
 
-    export let viewer = null;
-    export default {
+    export let viewer: Viewer;
+    export default defineComponent({
         name: 'CesiumMap',
         props: {
             showFlyCesiumMap: { type: Boolean, default: false },
@@ -52,11 +61,12 @@
             FlyPathPanel,
         },
         data() {
-            this.hightLightClickedBuildingListener = (evt) => {};
-            this.currentFWBH = '';
-            this.hightLightedPickedObject = null;
-            this.isMoveMentEventOff = false;
             return {
+                viewer: Object.freeze(viewer),
+                currentFWBH: '',
+                hightLightedPickedObject: null,
+                isMoveMentEventOff: false,
+                hightLightClickedBuildingListener: (evt: Event) => {},
                 // 不要将这里的属性与cesium的相关对象关联,否则cesium相关对象会被劫持,造成性能问题
                 loaded3DTilesModelFlag: false,
                 loading: false,
@@ -75,57 +85,77 @@
         },
         watch: {
             checkFanwei(n, o) {
-                viewer.entities.values.find((i) => i.name === '墙体上线').show =
-                    (n && this.wallDisplayTypeIsLine) || false;
-                viewer.entities.values.find((i) => i.name === '墙体范围').show =
-                    (n && !this.wallDisplayTypeIsLine) || false;
+                const wallline = viewer?.entities?.values?.find(
+                    (i) => i.name === '墙体上线'
+                );
+                if (wallline)
+                    wallline.show = (n && this.wallDisplayTypeIsLine) || false;
+                const wallrange = viewer.entities.values.find(
+                    (i) => i.name === '墙体范围'
+                );
+                if (wallrange)
+                    wallrange.show =
+                        (n && !this.wallDisplayTypeIsLine) || false;
                 viewer.scene.requestRender();
             },
             checkZhongyuanhongxian(n, o) {
-                viewer.entities.values.find(
+                const wallline = viewer?.entities?.values?.find(
                     (i) => i.name === '雅居乐中园墙体上线'
-                ).show = (n && this.wallDisplayTypeIsLine) || false;
-                viewer.entities.values.find(
+                );
+                if (wallline)
+                    wallline.show = (n && this.wallDisplayTypeIsLine) || false;
+                const wallrange = viewer.entities.values.find(
                     (i) => i.name === '雅居乐中园范围'
-                ).show = (n && !this.wallDisplayTypeIsLine) || false;
+                );
+                if (wallrange)
+                    wallrange.show =
+                        (n && !this.wallDisplayTypeIsLine) || false;
                 viewer.scene.requestRender();
             },
             isWallDisplay: {
                 handler(n, o) {
-                    if (!viewer) return;
                     if (!this.isZhongShanQuanyan) {
-                        viewer.entities.values.find(
-                            (i) => i.name === '墙体范围'
-                        ).show = n;
-                        viewer.entities.values.find(
+                        const wallline = viewer?.entities?.values?.find(
                             (i) => i.name === '墙体上线'
-                        ).show = n;
+                        );
+                        if (wallline) wallline.show = n;
+                        const wallrange = viewer.entities.values.find(
+                            (i) => i.name === '墙体范围'
+                        );
+                        if (wallrange) wallrange.show = n;
                     }
                     viewer.scene.requestRender();
                 },
             },
             // 作为看板时
             showFlyCesiumMap(n) {
+                const panel = this.$refs.flyPathPanel;
                 if (n) {
-                    viewer.homeButton.container.style.display = 'none';
+                    const style = (viewer.homeButton.container as HTMLElement)
+                        .style;
+                    style.display = 'none';
                     if (localStorage.pathStr) {
                         const { coordinates, speed, height } = JSON.parse(
                             JSON.parse(localStorage.pathStr)
                         );
-                        this.$refs.flyPathPanel.initFunc();
-                        this.$refs.flyPathPanel.coordinates = coordinates;
-                        this.$refs.flyPathPanel.speed = speed;
-                        this.$refs.flyPathPanel.height = height;
-                        this.$refs.flyPathPanel.genPath();
-                        this.$refs.flyPathPanel.hancleFlyStart();
+                        if (panel) {
+                            panel.initFunc();
+                            panel.coordinates = coordinates;
+                            panel.speed = speed;
+                            panel.height = height;
+                            panel.genPath();
+                            panel.hancleFlyStart();
+                        }
                     } else {
                         this.$message.error(
                             '未找到飞行路径, 请到业务管理-项目总览-3D地图-3D飞行漫游进行绘制'
                         );
                     }
                 } else {
-                    viewer.homeButton.container.style.display = 'block';
-                    this.$refs.flyPathPanel.destoryFunc();
+                    const style = (viewer.homeButton.container as HTMLElement)
+                        .style;
+                    style.display = 'block';
+                    panel?.destoryFunc();
                 }
             },
             // 父级切换到3d时，初始化
@@ -191,9 +221,11 @@
 
                 // Object.freeze(viewer) //会造成无法修改属性的错误
                 // viewer放store里会造成它是响应式的,从而造成内存溢出
-                viewer.cesiumWidget.creditContainer.style.display = 'none'; // 隐藏版权
-                viewer.animation.container.hidden = true;
-                viewer.timeline.container.hidden = true;
+                (
+                    viewer.cesiumWidget.creditContainer as HTMLElement
+                ).style.display = 'none'; // 隐藏版权
+                (viewer.animation.container as HTMLElement).hidden = true;
+                (viewer.timeline.container as HTMLElement).hidden = true;
                 // viewer.resolutionScale = 0.9; //降低画布分辨率
                 // viewer.scene.debugShowFramesPerSecond = true;
                 viewer.scene.requestRenderMode = true; //启用requestRenderMode可减少Cesium渲染新帧的总时间并减少Cesium在应用程序中的总体CPU使用率。
@@ -221,28 +253,28 @@
                 const measureTool = new MeasureTools(viewer);
                 Sandcastle.addToolbarButton(
                     '画线',
-                    (checked) => {
+                    () => {
                         measureTool.measurePolyLine();
                     },
                     'measure-toolbar'
                 );
                 Sandcastle.addToolbarButton(
                     '画面',
-                    (checked) => {
+                    () => {
                         measureTool.measurePolygon();
                     },
                     'measure-toolbar'
                 );
                 Sandcastle.addToolbarButton(
                     '量高',
-                    (checked) => {
+                    () => {
                         measureTool.measureHeight();
                     },
                     'measure-toolbar'
                 );
                 Sandcastle.addToolbarButton(
                     '移除',
-                    (checked) => {
+                    () => {
                         this.$message.success('移除成功');
                         measureTool.destroy();
                     },
@@ -250,11 +282,10 @@
                 );
                 Sandcastle.addToolbarButton(
                     '关闭',
-                    (checked) => {
+                    () => {
                         measureTool.destroy();
-                        document.getElementById(
-                            'measure-toolbar'
-                        ).style.display = 'none';
+                        const dom = document.getElementById('measure-toolbar');
+                        if (dom) dom.style.display = 'none';
                         this.$store.commit('map/CHANGE_MAP_STATE', {
                             key: 'isShow3DMeasure',
                             value: false,
@@ -265,290 +296,210 @@
             },
             add3DTilesModel(viewer) {
                 this.loading = true;
-                getPhotoGraphicFileUrlByProjectId({
-                    projectId: this.projectId,
-                }).then((r) => {
-                    if (!r.data) {
-                        this.$message.error(
-                            '未配置倾斜摄影模型地址，请联系系统管理员'
-                        );
-                        return;
-                    }
-                    let dantiTilesetUrlPath;
-                    let url = r.data.url;
-                    let urls = [];
-                    // 判断有没有逗号, 判断是不是有多个tileset
-                    if (url.includes(',')) {
-                        urls = url.split(',');
-                        dantiTilesetUrlPath = urls[0];
-                    } else {
-                        urls = [url];
-                        dantiTilesetUrlPath = url;
-                    }
+                // getPhotoGraphicFileUrlByProjectId({
+                //     projectId: this.projectId,
+                // }).then((r) => {
+                const r = {
+                    res: '0',
+                    msg: '操作成功!',
+                    data: {
+                        url: '/quanyan',
+                    },
+                };
+                if (!r.data) {
+                    this.$message.error(
+                        '未配置倾斜摄影模型地址，请联系系统管理员'
+                    );
+                    return;
+                }
+                let dantiTilesetUrlPath;
+                let url = r.data.url;
+                let urls = [];
+                // 判断有没有逗号, 判断是不是有多个tileset
+                if (url.includes(',')) {
+                    urls = url.split(',');
+                    dantiTilesetUrlPath = urls[0];
+                } else {
+                    urls = [url];
+                    dantiTilesetUrlPath = url;
+                }
 
-                    const tilesets = (window.tilesets = urls.map(
-                        (i) =>
-                            new Cesium.Cesium3DTileset({
-                                url: '/gis' + i + '/tileset.json', //数据路径
-                                skipLevelOfDetail: true, //确定在遍历期间是否应应用详细程度跳过
-                                // skipScreenSpaceErrorFactor: 50,
-                                immediatelyLoadDesiredLevelOfDetail: true, //true，只有瓷砖满足最大屏幕空间误差都不会被下载。跳过因子将被忽略，仅加载所需的图块
-                                // maximumNumberOfLoadedTiles: 1, //最大加载瓦片个数
-                                // maximumMemoryUsage: 800
-                                // debugShowMemoryUsage: true,
-                                // modelMatrix: m //转移矩阵,调整模型位置  或 tileset.modelMatrix =xx;
-                                /*
+                const tilesets = (window.tilesets = urls.map(
+                    (i) =>
+                        new Cesium.Cesium3DTileset({
+                            url: '/gis' + i + '/tileset.json', //数据路径
+                            skipLevelOfDetail: true, //确定在遍历期间是否应应用详细程度跳过
+                            // skipScreenSpaceErrorFactor: 50,
+                            immediatelyLoadDesiredLevelOfDetail: true, //true，只有瓷砖满足最大屏幕空间误差都不会被下载。跳过因子将被忽略，仅加载所需的图块
+                            // maximumNumberOfLoadedTiles: 1, //最大加载瓦片个数
+                            // maximumMemoryUsage: 800
+                            // debugShowMemoryUsage: true,
+                            // modelMatrix: m //转移矩阵,调整模型位置  或 tileset.modelMatrix =xx;
+                            /*
           当前策略是始终加载当前场景和屏幕空间错误所需的数据量。 maximumMemoryUsage 只是帧到帧缓存的大小。我们意识到这并不理想，因此请计划更改它，有关详细信息，请按照＃6226进行操作。
           同时，最好的解决方案是提高图块集的 MaximumScreenSpace 错误
           */
-                            })
-                    ));
+                        })
+                ));
 
-                    this.$on('hook:destroyed', (_) => {
-                        console.log(
-                            `this.$on("hook:destroyed", _ => { 销毁viewer`
-                        );
-                        if (viewer) {
-                            // 内存并没有减少,奇怪(被vue劫持了)
-                            viewer.dataSources &&
-                                viewer.dataSources.removeAll(true);
-                            viewer.entities && viewer.entities.removeAll();
-                            viewer.destroy(); // viewer.destroy包含了viewer.scene.primitives.destroy();
-                        }
-                    });
-                    window.adjustTileSet = this.adjustTileSet;
-                    window.update3dtilesMaxtrix = this.update3dtilesMaxtrix;
-                    window.zoomTo = () => {
-                        viewer.zoomTo(
-                            tilesets[0],
-                            new Cesium.HeadingPitchRange(
-                                0,
-                                Cesium.Math.toRadians(-90.0),
-                                2000
-                            )
-                        );
-                    };
-                    tilesets.forEach((tileset, index) => {
-                        tileset.readyPromise
-                            .then((theTileset) => {
-                                if (index === 0) {
-                                    const zoomTo = () =>
-                                        viewer.zoomTo(
-                                            theTileset,
-                                            new Cesium.HeadingPitchRange(
-                                                0,
-                                                Cesium.Math.toRadians(-90.0),
-                                                2000
-                                            )
-                                        );
-                                    // 设置home按钮跳转到模型
-                                    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(
-                                        (e) => {
-                                            e.cancel = true;
-                                            zoomTo();
-                                        }
+                this.$on('hook:destroyed', (_) => {
+                    console.log(`this.$on("hook:destroyed", _ => { 销毁viewer`);
+                    if (viewer) {
+                        // 内存并没有减少,奇怪(被vue劫持了)
+                        viewer.dataSources &&
+                            viewer.dataSources.removeAll(true);
+                        viewer.entities && viewer.entities.removeAll();
+                        viewer.destroy(); // viewer.destroy包含了viewer.scene.primitives.destroy();
+                    }
+                });
+                window.adjustTileSet = this.adjustTileSet;
+                window.update3dtilesMaxtrix = this.update3dtilesMaxtrix;
+                window.zoomTo = () => {
+                    viewer.zoomTo(
+                        tilesets[0],
+                        new Cesium.HeadingPitchRange(
+                            0,
+                            Cesium.Math.toRadians(-90.0),
+                            2000
+                        )
+                    );
+                };
+                tilesets.forEach((tileset, index) => {
+                    tileset.readyPromise
+                        .then((theTileset) => {
+                            if (index === 0) {
+                                const zoomTo = () =>
+                                    viewer.zoomTo(
+                                        theTileset,
+                                        new Cesium.HeadingPitchRange(
+                                            0,
+                                            Cesium.Math.toRadians(-90.0),
+                                            2000
+                                        )
                                     );
-                                }
-                                // 云效的流水线自动构建后的cesium版本是最新的1.79.1，没有tileset.url属性，只有tileset._url属性
-                                if (theTileset._url.includes('jitang'))
-                                    this.adjustTileSet(theTileset, {
-                                        xAxias: 0.00002,
-                                        height: -5,
-                                    });
-                                else if (theTileset._url.includes('jiangcun1'))
-                                    this.adjustTileSet(tilesets[0], {
-                                        xAxias: 0,
-                                        height: 25,
-                                    });
-                                else if (theTileset._url.includes('jiangcun2'))
-                                    this.adjustTileSet(tilesets[1], {
-                                        xAxias: 0,
-                                        height: 20,
-                                    });
-                                else if (theTileset._url.includes('jiangcun3'))
-                                    this.adjustTileSet(tilesets[2], {
-                                        xAxias: 0,
-                                        height: 18,
-                                    });
-                                else if (theTileset._url.includes('hemu'))
-                                    // 这个刚进界面是飘在空中的，要执行两遍才贴到地上
-                                    // this.adjustTileSet(theTileset, { xAxias: -0.0124582, yAxias: -0.0430213,height: -12605 });
-                                    // 整体比this.adjustTileSet调整的要准一点
-                                    this.update3dtilesMaxtrix(theTileset, {
-                                        tx: 112.899025, //模型中心X轴坐标（经度，单位：十进制度）
-                                        ty: 21.05855, //模型中心Y轴坐标（纬度，单位：十进制度）
-                                        tz: -30, //模型中心Z轴坐标（高程，单位：米）
-                                        rx: 0, //X轴（经度）方向旋转角度（单位：度）
-                                        ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
-                                        rz: 0, //Z轴（高程）方向旋转角度（单位：度）
-                                        scale: 0, //缩放比例
-                                    });
-                                else if (theTileset._url.includes('lingnan'))
-                                    this.update3dtilesMaxtrix(theTileset, {
-                                        tx: 112.901246, //模型中心X轴坐标（经度，单位：十进制度）
-                                        ty: 21.0581, //模型中心Y轴坐标（纬度，单位：十进制度）
-                                        tz: -35, //模型中心Z轴坐标（高程，单位：米）
-                                        rx: 0, //X轴（经度）方向旋转角度（单位：度）
-                                        ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
-                                        rz: 0, //Z轴（高程）方向旋转角度（单位：度）
-                                        scale: 0, //缩放比例
-                                    });
-                                else if (theTileset._url.includes('chebei'))
-                                    this.update3dtilesMaxtrix(theTileset, {
-                                        tx: 112.90283, //模型中心X轴坐标（经度，单位：十进制度）
-                                        ty: 21.05787, //模型中心Y轴坐标（纬度，单位：十进制度）
-                                        tz: -10, //模型中心Z轴坐标（高程，单位：米）
-                                        rx: 0, //X轴（经度）方向旋转角度（单位：度）
-                                        ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
-                                        rz: 0, //Z轴（高程）方向旋转角度（单位：度）
-                                        scale: 0, //缩放比例
-                                    });
-                                else if (theTileset._url.includes('gaobu'))
-                                    this.update3dtilesMaxtrix(theTileset, {
-                                        tx: 112.900105, //模型中心X轴坐标（经度，单位：十进制度）
-                                        ty: 21.05833, //模型中心Y轴坐标（纬度，单位：十进制度）
-                                        tz: -33, //模型中心Z轴坐标（高程，单位：米）
-                                        rx: 0, //X轴（经度）方向旋转角度（单位：度）
-                                        ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
-                                        rz: 0, //Z轴（高程）方向旋转角度（单位：度）
-                                        scale: 0, //缩放比例
-                                    });
-                                //第二个参数depthTestAgainstTerrain为true后需要设置一下高度
-                                else
-                                    this.adjustTileSet(theTileset, {
-                                        height: -5,
-                                    }); //第二个参数depthTestAgainstTerrain为true后需要设置一下高度
-                                // var lnglat = this.cartographicToLnglat(
-                                //   Cesium.Cartographic.z fromCartesian(theTileset.boundingSphere.center)
-                                // );
-                                // console.log("校正后的3dtiles模型坐标", lnglat);
-                                viewer.scene.primitives.add(theTileset);
-                                if (index === 0) zoomTo();
-                                // 加载用于单体话的3dtile
-                                if (index === 0 && !this.showFlyCesiumMap) {
-                                    this.add3DTilesClassifyModel(
-                                        viewer,
-                                        dantiTilesetUrlPath
+                                // 设置home按钮跳转到模型
+                                viewer.homeButton.viewModel.command.beforeExecute.addEventListener(
+                                    (e) => {
+                                        e.cancel = true;
+                                        zoomTo();
+                                    }
+                                );
+                            }
+                            // 云效的流水线自动构建后的cesium版本是最新的1.79.1，没有tileset.url属性，只有tileset._url属性
+                            if (theTileset._url.includes('jitang'))
+                                this.adjustTileSet(theTileset, {
+                                    xAxias: 0.00002,
+                                    height: -5,
+                                });
+                            else if (theTileset._url.includes('jiangcun1'))
+                                this.adjustTileSet(tilesets[0], {
+                                    xAxias: 0,
+                                    height: 25,
+                                });
+                            else if (theTileset._url.includes('jiangcun2'))
+                                this.adjustTileSet(tilesets[1], {
+                                    xAxias: 0,
+                                    height: 20,
+                                });
+                            else if (theTileset._url.includes('jiangcun3'))
+                                this.adjustTileSet(tilesets[2], {
+                                    xAxias: 0,
+                                    height: 18,
+                                });
+                            else if (theTileset._url.includes('hemu'))
+                                // 这个刚进界面是飘在空中的，要执行两遍才贴到地上
+                                // this.adjustTileSet(theTileset, { xAxias: -0.0124582, yAxias: -0.0430213,height: -12605 });
+                                // 整体比this.adjustTileSet调整的要准一点
+                                this.update3dtilesMaxtrix(theTileset, {
+                                    tx: 112.899025, //模型中心X轴坐标（经度，单位：十进制度）
+                                    ty: 21.05855, //模型中心Y轴坐标（纬度，单位：十进制度）
+                                    tz: -30, //模型中心Z轴坐标（高程，单位：米）
+                                    rx: 0, //X轴（经度）方向旋转角度（单位：度）
+                                    ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
+                                    rz: 0, //Z轴（高程）方向旋转角度（单位：度）
+                                    scale: 0, //缩放比例
+                                });
+                            else if (theTileset._url.includes('lingnan'))
+                                this.update3dtilesMaxtrix(theTileset, {
+                                    tx: 112.901246, //模型中心X轴坐标（经度，单位：十进制度）
+                                    ty: 21.0581, //模型中心Y轴坐标（纬度，单位：十进制度）
+                                    tz: -35, //模型中心Z轴坐标（高程，单位：米）
+                                    rx: 0, //X轴（经度）方向旋转角度（单位：度）
+                                    ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
+                                    rz: 0, //Z轴（高程）方向旋转角度（单位：度）
+                                    scale: 0, //缩放比例
+                                });
+                            else if (theTileset._url.includes('chebei'))
+                                this.update3dtilesMaxtrix(theTileset, {
+                                    tx: 112.90283, //模型中心X轴坐标（经度，单位：十进制度）
+                                    ty: 21.05787, //模型中心Y轴坐标（纬度，单位：十进制度）
+                                    tz: -10, //模型中心Z轴坐标（高程，单位：米）
+                                    rx: 0, //X轴（经度）方向旋转角度（单位：度）
+                                    ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
+                                    rz: 0, //Z轴（高程）方向旋转角度（单位：度）
+                                    scale: 0, //缩放比例
+                                });
+                            else if (theTileset._url.includes('gaobu'))
+                                this.update3dtilesMaxtrix(theTileset, {
+                                    tx: 112.900105, //模型中心X轴坐标（经度，单位：十进制度）
+                                    ty: 21.05833, //模型中心Y轴坐标（纬度，单位：十进制度）
+                                    tz: -33, //模型中心Z轴坐标（高程，单位：米）
+                                    rx: 0, //X轴（经度）方向旋转角度（单位：度）
+                                    ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
+                                    rz: 0, //Z轴（高程）方向旋转角度（单位：度）
+                                    scale: 0, //缩放比例
+                                });
+                            //第二个参数depthTestAgainstTerrain为true后需要设置一下高度
+                            else
+                                this.adjustTileSet(theTileset, {
+                                    height: -5,
+                                }); //第二个参数depthTestAgainstTerrain为true后需要设置一下高度
+                            // var lnglat = this.cartographicToLnglat(
+                            //   Cesium.Cartographic.z fromCartesian(theTileset.boundingSphere.center)
+                            // );
+                            // console.log("校正后的3dtiles模型坐标", lnglat);
+                            viewer.scene.primitives.add(theTileset);
+                            if (index === 0) zoomTo();
+                            // 加载用于单体话的3dtile
+                            if (index === 0 && !this.showFlyCesiumMap) {
+                                this.add3DTilesClassifyModel(
+                                    viewer,
+                                    dantiTilesetUrlPath
+                                );
+                                // const subName = this.$parent.buildingGsonUrl.match(
+                                //   /typeName=.*:.*_(.*)&/
+                                // )[1];
+                                // const url = this.$parent.buildingGsonUrl.replace(subName, "fanwei");
+                                const a = this.$parent.buildingGsonUrl;
+                                if (a) {
+                                    console.log(a);
+                                    const b = a.slice(
+                                        a.indexOf('&typeName='),
+                                        a.indexOf('&outputFormat')
                                     );
-                                    // const subName = this.$parent.buildingGsonUrl.match(
-                                    //   /typeName=.*:.*_(.*)&/
-                                    // )[1];
-                                    // const url = this.$parent.buildingGsonUrl.replace(subName, "fanwei");
-                                    const a = this.$parent.buildingGsonUrl;
-                                    if (a) {
-                                        console.log(a);
-                                        const b = a.slice(
-                                            a.indexOf('&typeName='),
-                                            a.indexOf('&outputFormat')
-                                        );
-                                        let url = a.replace(
+                                    let url = a.replace(
+                                        b,
+                                        b.slice(0, b.indexOf('_')) + '_fanwei'
+                                    );
+                                    url = url.replace('EPSG:3857', 'EPSG:4326');
+                                    const isZhongShanQuanyan =
+                                        a.includes('quanyan');
+                                    // 中山泉眼项目特有
+                                    this.$store.commit('map/CHANGE_MAP_STATE', {
+                                        key: 'isZhongShanQuanyan',
+                                        value: isZhongShanQuanyan,
+                                    });
+                                    if (isZhongShanQuanyan) {
+                                        let url2 = a.replace(
                                             b,
-                                            b.slice(0, b.indexOf('_')) +
-                                                '_fanwei'
+                                            b.slice(0, b.indexOf(':')) +
+                                                ':三乡测绘_实测总图_雅居乐园中园红线'
                                         );
-                                        url = url.replace(
+                                        url2 = url2.replace(
                                             'EPSG:3857',
                                             'EPSG:4326'
                                         );
-                                        const isZhongShanQuanyan =
-                                            a.includes('quanyan');
-                                        // 中山泉眼项目特有
-                                        this.$store.commit(
-                                            'map/CHANGE_MAP_STATE',
-                                            {
-                                                key: 'isZhongShanQuanyan',
-                                                value: isZhongShanQuanyan,
-                                            }
-                                        );
-                                        if (isZhongShanQuanyan) {
-                                            let url2 = a.replace(
-                                                b,
-                                                b.slice(0, b.indexOf(':')) +
-                                                    ':三乡测绘_实测总图_雅居乐园中园红线'
-                                            );
-                                            url2 = url2.replace(
-                                                'EPSG:3857',
-                                                'EPSG:4326'
-                                            );
-                                            fetch(url2)
-                                                .then((r) => r.json())
-                                                .then((r) => {
-                                                    let arr0 = [];
-                                                    let arr1 = [];
-                                                    const geometry =
-                                                        r.features[0].geometry;
-                                                    if (
-                                                        geometry.type ===
-                                                        'MultiLineString'
-                                                    ) {
-                                                        arr0 =
-                                                            geometry.coordinates[0].slice();
-                                                        arr1 = arr0
-                                                            .map((i) => {
-                                                                i[2] = 50;
-                                                                return i;
-                                                            })
-                                                            .flat(2);
-                                                    } else if (
-                                                        geometry.type ===
-                                                        'MultiPolygon'
-                                                    ) {
-                                                        arr0 =
-                                                            geometry.coordinates[0][0].slice();
-                                                        arr1 = arr0
-                                                            .map((i) => {
-                                                                i.push(50);
-                                                                return i;
-                                                            })
-                                                            .flat(2);
-                                                    }
-                                                    const positions =
-                                                        Cesium.Cartesian3.fromDegreesArrayHeights(
-                                                            // arr
-                                                            [
-                                                                ...arr1,
-                                                                ...arr1.slice(
-                                                                    3,
-                                                                    6
-                                                                ),
-                                                            ] //复制第二个点到最后，不然墙体没有封闭起来
-                                                        );
-                                                    window.positions =
-                                                        positions;
-
-                                                    const wall =
-                                                        viewer.entities.add({
-                                                            name: '雅居乐中园范围',
-                                                            wall: {
-                                                                positions,
-                                                                material:
-                                                                    Cesium.Color.RED.withAlpha(
-                                                                        0.5
-                                                                    ),
-                                                                outline: true,
-                                                            },
-                                                        });
-                                                    const wallLine =
-                                                        viewer.entities.add({
-                                                            name: '雅居乐中园墙体上线',
-                                                            show: false,
-                                                            polyline: {
-                                                                positions,
-                                                                width: 2.0,
-                                                                material:
-                                                                    Cesium.Color
-                                                                        .RED,
-                                                            },
-                                                        });
-                                                })
-                                                .catch((e) => {
-                                                    this.$message.error(
-                                                        'GeoServer配置错误,加载范围失败'
-                                                    );
-                                                    console.error(e);
-                                                });
-                                        }
-                                        fetch(url)
+                                        fetch(url2)
                                             .then((r) => r.json())
                                             .then((r) => {
                                                 let arr0 = [];
@@ -592,7 +543,7 @@
 
                                                 const wall =
                                                     viewer.entities.add({
-                                                        name: '墙体范围',
+                                                        name: '雅居乐中园范围',
                                                         wall: {
                                                             positions,
                                                             material:
@@ -604,7 +555,7 @@
                                                     });
                                                 const wallLine =
                                                     viewer.entities.add({
-                                                        name: '墙体上线',
+                                                        name: '雅居乐中园墙体上线',
                                                         show: false,
                                                         polyline: {
                                                             positions,
@@ -614,11 +565,6 @@
                                                                     .RED,
                                                         },
                                                     });
-                                                // wallLine.definitionChanged.addEventListener(
-                                                //   (origin, property, newValue, oldValue) => {
-                                                //     this.checkFanwei = newValue;
-                                                //   }
-                                                // );
                                             })
                                             .catch((e) => {
                                                 this.$message.error(
@@ -626,46 +572,119 @@
                                                 );
                                                 console.error(e);
                                             });
-                                    } else {
-                                        this.$message.error(
-                                            '没有在模型目录下放置单体3DTiles'
-                                        );
                                     }
-                                }
-                                this.loading = false;
-                            })
-                            .otherwise((error) => {
-                                this.loading = false;
-                                console.log(error);
-                            });
-                    });
-                    const timeS = new Date();
-                    tilesets.forEach((tileset, index) =>
-                        tileset.loadProgress.addEventListener(
-                            (
-                                numberOfPendingRequests,
-                                numberOfTilesProcessing
-                            ) => {
-                                if (
-                                    numberOfPendingRequests === 0 &&
-                                    numberOfTilesProcessing === 0
-                                ) {
-                                    this.statustxt = '加载完成';
-                                    console.log(
-                                        `第${index}个倾斜模型加载完成`,
-                                        new Date() - timeS
+                                    fetch(url)
+                                        .then((r) => r.json())
+                                        .then((r) => {
+                                            let arr0 = [];
+                                            let arr1 = [];
+                                            const geometry =
+                                                r.features[0].geometry;
+                                            if (
+                                                geometry.type ===
+                                                'MultiLineString'
+                                            ) {
+                                                arr0 =
+                                                    geometry.coordinates[0].slice();
+                                                arr1 = arr0
+                                                    .map((i) => {
+                                                        i[2] = 50;
+                                                        return i;
+                                                    })
+                                                    .flat(2);
+                                            } else if (
+                                                geometry.type === 'MultiPolygon'
+                                            ) {
+                                                arr0 =
+                                                    geometry.coordinates[0][0].slice();
+                                                arr1 = arr0
+                                                    .map((i) => {
+                                                        i.push(50);
+                                                        return i;
+                                                    })
+                                                    .flat(2);
+                                            }
+                                            const positions =
+                                                Cesium.Cartesian3.fromDegreesArrayHeights(
+                                                    // arr
+                                                    [
+                                                        ...arr1,
+                                                        ...arr1.slice(3, 6),
+                                                    ] //复制第二个点到最后，不然墙体没有封闭起来
+                                                );
+                                            window.positions = positions;
+
+                                            const wall = viewer.entities.add({
+                                                name: '墙体范围',
+                                                wall: {
+                                                    positions,
+                                                    material:
+                                                        Cesium.Color.RED.withAlpha(
+                                                            0.5
+                                                        ),
+                                                    outline: true,
+                                                },
+                                            });
+                                            const wallLine =
+                                                viewer.entities.add({
+                                                    name: '墙体上线',
+                                                    show: false,
+                                                    polyline: {
+                                                        positions,
+                                                        width: 2.0,
+                                                        material:
+                                                            Cesium.Color.RED,
+                                                    },
+                                                });
+                                            // wallLine.definitionChanged.addEventListener(
+                                            //   (origin, property, newValue, oldValue) => {
+                                            //     this.checkFanwei = newValue;
+                                            //   }
+                                            // );
+                                        })
+                                        .catch((e) => {
+                                            this.$message.error(
+                                                'GeoServer配置错误,加载范围失败'
+                                            );
+                                            console.error(e);
+                                        });
+                                } else {
+                                    this.$message.error(
+                                        '没有在模型目录下放置单体3DTiles'
                                     );
-                                    return;
                                 }
-                                this.statustxt = `[第${
-                                    index + 1
-                                }个倾斜模型] 获取中: ${numberOfPendingRequests} , 加载中: ${numberOfTilesProcessing}`;
                             }
-                        )
-                    );
+                            this.loading = false;
+                        })
+                        .otherwise((error) => {
+                            this.loading = false;
+                            console.log(error);
+                        });
                 });
+                const timeS = new Date();
+                tilesets.forEach((tileset, index) =>
+                    tileset.loadProgress.addEventListener(
+                        (numberOfPendingRequests, numberOfTilesProcessing) => {
+                            if (
+                                numberOfPendingRequests === 0 &&
+                                numberOfTilesProcessing === 0
+                            ) {
+                                this.statustxt = '加载完成';
+                                console.log(
+                                    `第${index}个倾斜模型加载完成`,
+                                    new Date() - timeS
+                                );
+                                return;
+                            }
+                            this.statustxt = `[第${
+                                index + 1
+                            }个倾斜模型] 获取中: ${numberOfPendingRequests} , 加载中: ${numberOfTilesProcessing}`;
+                        }
+                    )
+                );
+                // });
             },
-            add3DTilesClassifyModel(viewer, dantiTilesetUrlPath) {
+            add3DTilesClassifyModel(viewer: Viewer, dantiTilesetUrlPath) {
                 var classifcationTilesetUrl = `/gis/${dantiTilesetUrlPath}/danti/tileset.json`;
                 var classificationTileset = (this.classificationTileset =
                     new Cesium.Cesium3DTileset({
@@ -1052,7 +1071,7 @@
                 return [lng, lat, hei];
             },
         },
-    };
+    });
 </script>
 <style lang="scss" scoped>
     #cesium-container {

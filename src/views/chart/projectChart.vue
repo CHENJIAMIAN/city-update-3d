@@ -134,7 +134,7 @@
                         border
                         show-summary
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 1);
                             }
                         "
@@ -157,7 +157,7 @@
                         show-summary
                         :data="groundTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 1);
                             }
                         "
@@ -176,7 +176,7 @@
                         show-summary
                         :data="aspirationTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 3);
                             }
                         "
@@ -214,7 +214,7 @@
                         show-summary
                         :data="authentificationTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 2);
                             }
                         "
@@ -241,7 +241,7 @@
                         show-summary
                         :data="measureTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 2);
                             }
                         "
@@ -268,7 +268,7 @@
                         show-summary
                         :data="dismantleTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 2);
                             }
                         "
@@ -295,7 +295,7 @@
                         show-summary
                         :data="rightCancelTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 2);
                             }
                         "
@@ -328,7 +328,7 @@
                         show-summary
                         :data="recvHouseTable"
                         :summary-method="
-                            (param) => {
+                            (param:any) => {
                                 return getSummaries(param, 2);
                             }
                         "
@@ -355,8 +355,8 @@
                         show-summary
                         :data="overlappingTable"
                         :summary-method="
-                            (param) => {
-                                return getSummaries(param);
+                            (param:any) => {
+                                return getSummaries(param,0);
                             }
                         "
                         size="small"
@@ -409,6 +409,7 @@
     import { mapState } from 'pinia';
     import { useMapStore } from '@/stores';
     import { Draw, Select, Modify } from 'ol/interaction';
+    import type { Interaction } from 'ol/interaction';
     import { getArea, getLength } from 'ol/sphere';
     import { LineString, Polygon } from 'ol/geom';
     import { map } from '@/views/map/index.vue';
@@ -422,7 +423,10 @@
 
     import html2canvas from 'html2canvas';
     import Overlay from 'ol/Overlay';
-    export default {
+    import { defineComponent } from 'vue';
+    import type Feature from 'ol/Feature';
+
+    export default defineComponent({
         components: {},
         props: {
             typeId: {
@@ -436,10 +440,16 @@
             },
         },
         data() {
+            let select: any | undefined;
+            let drawLInteraction: Interaction | undefined;
+            let modifyLInteraction: Interaction | undefined;
             return {
+                drawLInteraction,
+                modifyLInteraction,
+                select,
                 isCollapse: false,
                 isDrawing: false,
-                typeValue: '',
+                typeValue: 0,
                 measureNums: [],
                 protocolNums: [],
                 // 建筑物统计下拉数据
@@ -704,9 +714,9 @@
                 }));
                 map.addLayer(vector);
 
-                let sketchFea;
-                let helpTooltipElement;
-                let helpTooltipOverLay;
+                let sketchFea: Feature;
+                let helpTooltipElement: HTMLElement;
+                let helpTooltipOverLay: Overlay;
                 const continuePolygonMsg = '单击以继续绘制多边形,双击结束绘制';
                 const formatArea = function (polygon) {
                     const area = getArea(polygon);
@@ -784,12 +794,12 @@
                 createHelpTooltip();
 
                 let listener;
-                draw.on('drawstart', function (evt) {
+                draw.on('drawstart', (evt) => {
                     sketchFea = evt.feature;
                     let tooltipCoord = evt.coordinate;
                     listener = sketchFea
-                        .getGeometry()
-                        .on('change', function (evt) {
+                        ?.getGeometry()
+                        ?.on('change', function (evt) {
                             const geom = evt.target;
                             let output;
                             if (geom instanceof Polygon) {
@@ -1351,9 +1361,9 @@
                     });
                 });
             },
-            getSummaries(param, type) {
+            getSummaries(param: any, type: number) {
                 const { columns, data } = param;
-                const sums = [];
+                const sums: string[] | number[] = [];
                 columns.forEach((column, index) => {
                     if (index === 0) {
                         sums[index] = '合计';
@@ -1365,10 +1375,10 @@
                     }
 
                     if (type === 2) {
-                        let val;
-                        let sum = sums[1] + sums[2];
-                        if (index === 3) val = sums[1] / sum;
-                        else if (index === 4) val = sums[2] / sum;
+                        let val: number = 0;
+                        let sum = Number(sums[1]) + Number(sums[2]);
+                        if (index === 3) val = Number(sums[1]) / sum;
+                        else if (index === 4) val = Number(sums[2]) / sum;
                         sums[index] = (val * 100).toFixed(2) + '%';
                     }
 
@@ -1398,7 +1408,7 @@
                 return sums;
             },
         },
-    };
+    });
 </script>
 
 <style lang="scss" scoped>

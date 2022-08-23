@@ -9,16 +9,21 @@ import type { StyleFunction, StyleLike } from 'ol/style/Style';
 import type { Style } from 'ol/style';
 import type BaseLayer from 'ol/layer/Base';
 
-// declare module 'ol/' {
-//     interface Map {
-//         getLayerByProperty: any;
-//         getLayersByProperty: any;
-//         moveViewById: any;
-//         fitExtentByFeatures: any;
-//         getAllBuildingFeas: any;
-//         resetAllBuildingStyleAndReturnAllFeas: any;
-//     }
-// }
+declare module 'ol/' {
+    interface Map {
+        // getLayerByProperty: any;
+        // getLayersByProperty: any;
+        // moveViewById: any;
+        // fitExtentByFeatures: any;
+        // getAllBuildingFeas: any;
+        // resetAllBuildingStyleAndReturnAllFeas: any;
+        closerElements: any;
+        closerOverLays: any;
+        helpTooltipElement: any;
+        helpTooltipOverLay: any;
+        pointerMoveMeasureTipHandler: any;
+    }
+}
 
 export default class EnhanceOlMap extends Map {
     // 给地图添加一些工具方法
