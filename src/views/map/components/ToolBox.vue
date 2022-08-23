@@ -8,15 +8,7 @@
             />
             <span>切换编号显示</span>
         </div>
-        <template v-if="$parent.is3D">
-            <div class="dropdown-button" @click="handleWallDisplayTypeClick">
-                <img
-                    width="16"
-                    height="16"
-                    src="../../../assets/icon/layersCompare.png"
-                />
-                <span>切换墙体类型</span>
-            </div>
+        <template v-if="$parent?.is3D">
             <div
                 v-if="!isZhongShanQuanyan"
                 class="dropdown-button"
@@ -267,7 +259,8 @@
     </div>
 </template>
 
-<script lang="ts">    import { mapState } from 'pinia';
+<script lang="ts">
+    import { mapState } from 'pinia';
     import { useMapStore } from '@/stores';
     import { primaryAction } from 'ol/events/condition';
     import { viewer } from '@/views/map/components/CesiumMap.vue';
@@ -285,13 +278,20 @@
         getNoneTextFWStyleFunc,
     } from '@/views/map/olmap-common';
 
-    export default {
+    // import type { Notification as ElNotification } from 'element-ui';
+    import { defineComponent } from 'vue';
+
+    export default defineComponent({
         components: {},
         data() {
-            notify1: null;
-            notify2: null;
-            this.fwbzFlag = true;
+            let notify1: any;
+            let notify2: any;
             return {
+                // drawingPolygon: false,
+                // measuring: false,
+                fwbzFlag: true,
+                notify1,
+                notify2,
                 addingBuilding: false,
             };
         },
@@ -317,8 +317,8 @@
                                         `/mappage/projectOverview/index?deleteEditFlag=0&measureNum=${measureNum}`
                                     );
                                 },
-                            });
-                            this.$on('hook:beforeDestroy', (_) => {
+                            } as ElNotificationOptions);
+                            this.$on('hook:beforeDestroy', () => {
                                 this.notify1?.close();
                                 this.notify1 = null;
                             });
@@ -345,8 +345,8 @@
             showTool() {
                 // 新增  删除 自建
                 return (
-                    !this.$parent.showStatistics &&
-                    !this.$parent.disburseBudgetDrawerList.visible &&
+                    !(this.$parent as any)?.showStatistics &&
+                    !(this.$parent as any)?.disburseBudgetDrawerList.visible &&
                     !this.drawingPolygon &&
                     !this.measuring &&
                     this.$route.query.deleteEditFlag != 1 &&
@@ -356,7 +356,7 @@
             showStatic() {
                 return (
                     !this.measuring &&
-                    !this.$parent.disburseBudgetDrawerList.visible &&
+                    !(this.$parent as any)?.disburseBudgetDrawerList.visible &&
                     !this.drawingPolygon &&
                     this.$route.query.deleteEditFlag != 1 &&
                     !this.addingBuilding
@@ -366,7 +366,7 @@
                 return (
                     !this.drawingPolygon &&
                     !this.measuring &&
-                    !this.$parent.showStatistics &&
+                    !(this.$parent as any)?.showStatistics &&
                     this.$route.query.deleteEditFlag != 1 &&
                     !this.addingBuilding
                 );
@@ -375,8 +375,8 @@
                 return (
                     !this.isDrawingRegion &&
                     !this.drawingPolygon &&
-                    !this.$parent.showStatistics &&
-                    !this.$parent.disburseBudgetDrawerList.visible &&
+                    !(this.$parent as any)?.showStatistics &&
+                    !(this.$parent as any)?.disburseBudgetDrawerList.visible &&
                     this.$route.query.deleteEditFlag != 1 &&
                     !this.addingBuilding
                 );
@@ -468,12 +468,12 @@
         },
         methods: {
             // 添加到服务器端
-            addWfs(feature, measureNum) {
+            addWfs(feature: Feature, measureNum: string) {
                 var WFSTSerializer = new WFS();
-                const layername = this.$parent.buildingLayers
+                const layername = (this.$parent as any)?.buildingLayers
                     .find((i) => i.get('name').includes('_fw'))
                     .get('name');
-                if (!layername || !this.$parent.namespace) {
+                if (!layername || !(this.$parent as any)?.namespace) {
                     debugger;
                     return;
                 }
@@ -483,7 +483,7 @@
                     null,
                     {
                         featureType: layername,
-                        featureNS: this.$parent.namespace,
+                        featureNS: (this.$parent as any)?.namespace,
                         // srsName: "http://www.opengis.net/def/crs/epsg/0/3857",//urn:ogc:def:crs:EPSG::4326
                         srsName: 'EPSG:3857', //
                     }
@@ -518,7 +518,7 @@
                                         })
                                         .catch(() => {});
                                 })
-                                .catch((_) => {
+                                .catch(() => {
                                     // 建筑物已经存在
                                     this.deleteWfs(feature);
                                 });
@@ -532,19 +532,21 @@
                     }
                 };
             },
-            deleteWfs(feature) {
+            deleteWfs(feature: Feature) {
+                const { $parent } = this;
+                if (!$parent) return;
                 var WFSTSerializer = new WFS();
-                const layername = this.$parent.buildingLayers
+                const layername = $parent.buildingLayers
                     .find((i) => i.get('name').includes('_fw'))
                     .get('name');
-                if (!layername || !this.$parent.namespace) return;
+                if (!layername || !$parent.namespace) return;
                 var featObject = WFSTSerializer.writeTransaction(
                     null,
                     null,
                     [feature],
                     {
                         featureType: layername,
-                        featureNS: this.$parent.namespace,
+                        featureNS: $parent.namespace,
                         // srsName: "http://www.opengis.net/def/crs/epsg/0/3857",//urn:ogc:def:crs:EPSG::4326
                         srsName: 'EPSG:3857', //
                     }
@@ -624,6 +626,7 @@
                     cancelAddingBuilding();
                 } else {
                     this.notify2 = this.$notify({
+                        title: '',
                         duration: 0,
                         offset: 100,
                         showClose: false,
@@ -633,7 +636,7 @@
                             cancelAddingBuilding();
                         },
                     });
-                    this.$on('hook:beforeDestroy', (_) => {
+                    this.$on('hook:beforeDestroy', () => {
                         this.notify2?.close();
                         this.notify2 = null;
                     });
@@ -645,7 +648,7 @@
                         if (
                             drawedFeature
                                 ?.getGeometry()
-                                .getPolygons()[0]
+                                ?.getPolygons()[0]
                                 ?.getCoordinates()[0]?.length <= 3
                         ) {
                             clearDrawed();
@@ -654,12 +657,16 @@
 
                         // 保存新绘制的feature
                         // 转换坐标
-                        var geometry = drawedFeature.getGeometry().clone();
+                        var geometry = drawedFeature?.getGeometry()?.clone();
                         // 设置feature对应的属性，这些属性是根据数据源的字段来设置的
                         var newFeature = new Feature();
                         newFeature.setGeometryName('geom');
                         const measureNum = prompt('请输入测绘编号');
-                        const fea = getBuildingFeaByMeasureNum(measureNum, map);
+                        if (measureNum)
+                            const fea = getBuildingFeaByMeasureNum(
+                                measureNum,
+                                map
+                            );
                         if (!measureNum || fea) {
                             if (fea)
                                 this.$message.error(
@@ -708,7 +715,7 @@
                 });
             },
             handleAnnotationsClick() {
-                if (this.$parent.is3D) {
+                if ((this.$parent as any)?.is3D) {
                     const measureNumAnnotations = viewer.measureNumAnnotations;
                     // Toggle the show property of every label in the collection
                     var len = measureNumAnnotations.length;
@@ -731,31 +738,6 @@
                     );
                 }
             },
-            handleWallDisplayTypeClick() {
-                if (!this.isZhongShanQuanyan) {
-                    viewer.entities.values.find(
-                        (i) => i.name === '墙体范围'
-                    ).show = this.wallDisplayTypeIsLine;
-                    viewer.entities.values.find(
-                        (i) => i.name === '墙体上线'
-                    ).show = !this.wallDisplayTypeIsLine;
-                } else {
-                    ['墙体范围', '雅居乐中园范围'].forEach((ii) => {
-                        viewer.entities.values.find((i) => i.name === ii).show =
-                            this.wallDisplayTypeIsLine;
-                    });
-                    ['墙体上线', '雅居乐中园墙体上线'].forEach((ii) => {
-                        viewer.entities.values.find((i) => i.name === ii).show =
-                            !this.wallDisplayTypeIsLine;
-                    });
-                }
-
-                this.$store.commit('map/CHANGE_MAP_STATE', {
-                    key: 'wallDisplayTypeIsLine',
-                    value: !this.wallDisplayTypeIsLine,
-                });
-                viewer.scene.requestRender();
-            },
             handleWallDisplayClick() {
                 this.$store.commit('map/CHANGE_MAP_STATE', {
                     key: 'isWallDisplay',
@@ -775,7 +757,7 @@
                 this.$emit('statistics', id);
             },
         },
-    };
+    });
 </script>
 <style lang="scss" scoped>
     .tool-box {
@@ -795,9 +777,6 @@
             cursor: pointer;
             span {
                 margin-left: 6px;
-            }
-            &:hover {
-                color: #006c69;
             }
         }
     }

@@ -77,7 +77,7 @@
                     !asKanban &&
                     showToolBox
                 "
-                @statistics="statistics"
+                @statistics="toolboxStatistics"
                 @showDisburseBudget="disburseBudgetDrawerList.visible = true"
                 @toggleLayerControl="showLayerControl2 = !showLayerControl2"
             />
@@ -98,7 +98,6 @@
                 filterable
                 remote
                 placeholder="请输入测绘编号或房屋编号"
-                :loading="searchLoading"
                 :no-data-text="searchNoDataText"
                 :remote-method="remoteSearchBuilding"
                 @change="fitMapViewToBuildingByMeasureNum(searchMeasureNumVal)"
@@ -108,17 +107,7 @@
                     :key="index"
                     :value="item.measureNum || item.protocolNum"
                 >
-                    <span v-if="item.type == 1" class="el-icon-office-building">
-                        {{ `${item.measureNum}/${item.protocolNum}` }}
-                    </span>
-                    <span v-else-if="item.type == 2" class="el-icon-user">
-                        {{
-                            `${item.rightName}/${item.identityCard}/${item.mobile}`
-                        }}
-                    </span>
-                    <span v-else-if="item.type == 3" class="el-icon-house">
-                        {{ `${item.clanCode}/${item.clanGroundNum}` }}
-                    </span>
+                    {{ `${item.measureNum}/${item.protocolNum}` }}
                 </el-option>
             </el-select>
 
@@ -177,7 +166,7 @@
             >
                 <span>影像图层</span>
             </div>
-                <!-- v-loading="isUnLockViewByExtent" -->
+            <!-- v-loading="isUnLockViewByExtent" -->
             <div
                 class="aerial-photography"
                 :class="{ active: maptype == '航拍实景' }"
@@ -192,80 +181,6 @@
                 @click="mapChange('飞行漫游')"
             >
                 <span>飞行漫游</span>
-            </div>
-        </div>
-
-        <!-- 城市点旁边的overlay展示项目信息 -->
-        <div>
-            <!-- 用城市id 作为元素id 也作为overlayid 这样根据获得城市的id,即可显示出对应的overlay -->
-            <div
-                :id="cityFeaProps.id"
-                v-for="cityFeaProps in cityFeasPropsThatHasManyProj"
-                :key="cityFeaProps.id"
-                class="city-overlay el-card is-always-shadow el-card__body"
-            >
-                <template>
-                    <div class="head">
-                        <el-button type="text">
-                            {{ cityFeaProps.cityName }}
-                        </el-button>
-                        <el-button
-                            style="float: right"
-                            type="text"
-                            @click="handleCloseMoreProjClick(cityFeaProps.id)"
-                        >
-                            关闭
-                        </el-button>
-                    </div>
-                    <div class="body">
-                        <div
-                            class="proj-row"
-                            :key="projectInfo"
-                            v-for="projectInfo in cityFeaProps.projectInfoList"
-                        >
-                            <div>{{ projectInfo.projectName }}</div>
-                            <div>{{ projectInfo.projectStageVal }}</div>
-                            <el-button
-                                size="mini"
-                                @click="
-                                    handleEnterProjClick(projectInfo.projectId)
-                                "
-                            >
-                                进入项目
-                            </el-button>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- 项目面旁边的overlay展示项目信息 -->
-        <div style="display: none">
-            <div
-                class="proj-overlay el-card is-always-shadow el-card__body"
-                v-for="projFeaProps in projectFeasProps"
-                :id="projFeaProps.id"
-                :key="projFeaProps.projsum"
-                :title="projFeaProps.projsum"
-            >
-                <div class="head">
-                    <el-button
-                        type="text"
-                        @click="handleEnterProjClick(projFeaProps.id)"
-                    >
-                        进入项目
-                    </el-button>
-                    <el-button
-                        style="float: right"
-                        type="text"
-                        @click="handleCloseMoreProjClick(projFeaProps.id)"
-                    >
-                        关闭
-                    </el-button>
-                </div>
-                <div class="body">
-                    <div>{{ projFeaProps.projsum }}</div>
-                </div>
             </div>
         </div>
 
@@ -349,11 +264,20 @@
     import {
         Image as ImageLayer,
         Tile as TileLayer,
+        Vector,
         Vector as VectorLayer,
         VectorImage,
     } from 'ol/layer';
     import { transform, fromLonLat } from 'ol/proj';
-    import Feature from 'ol/Feature';
+
+    import type Feature from 'ol/Feature';
+    import type Collection from 'ol/Collection';
+    import type { Geometry, SimpleGeometry } from 'ol/geom';
+    import type { StyleFunction } from 'ol/style/Style';
+    import type { default as SelectInteraction } from 'ol/interaction/Select';
+    import type { Options as BaseTileOptions } from 'ol/layer/BaseTile';
+    import type Event from 'ol/events/Event';
+
     import { Circle, Point } from 'ol/geom';
     import { Fill, Stroke, Style, Text, Icon } from 'ol/style';
     import { getCenter, containsExtent } from 'ol/extent';
@@ -375,6 +299,7 @@
     import { defaultBaseLayers } from '@/views/map/olmap-config';
     import { provinceAndCityData, CodeToText } from 'element-china-area-data';
     import {
+        loadGSONToVecLayer,
         loadGSONToVecLayer2,
         getBuildingFeaByMeasureNum,
         lockViewByExtent,
@@ -396,10 +321,11 @@
     import CesiumMap from './components/CesiumMap.vue';
 
     import { defineComponent } from 'vue';
+    import type BaseEvent from 'ol/events/Event';
 
     // 此处this为undefined
     // 不要放store里，不要被vue劫持，否则性能堪忧
-    export let map: Map;
+    export let map: Map | null;
 
     export default defineComponent({
         props: {
@@ -443,23 +369,22 @@
                 zoom: 5,
             });
             this.map = map;
-            let cityFeasPropsThatHasManyProj: any[] = [];
             let projectFeasProps: any[] = [];
             let multiSelectedProps: any[] = [];
             let searchOptions: any[] = [];
             let projInfo: any = {};
+            let buildingLayers: VectorImage<VectorSource>[] | undefined;
 
             return {
+                buildingLayers,
                 is3D: false,
                 projInfo,
                 multiSelectedProps,
                 projectFeasProps,
-                cityFeasPropsThatHasManyProj,
                 isUnLockViewByExtent: true,
                 //
                 showLayerControl2: true,
                 searchOptions,
-                searchLoading: false,
                 searchNoDataText: '',
                 //
                 isDisburseBudgetCollapse: false,
@@ -562,7 +487,7 @@
                     const { geoserver, namespace, layers } = r.data;
                     this.namespace = namespace; //给儿子ToolBox.vue WFS插入时用
                     // 用于LayerControl用来控制图层
-                    this.baseLayers = layers.concat(defaultBaseLayers);
+                    this.baseLayers = layers.concat(defaultBaseLayers as any);
                     // 用于cesium加载
                     this.buildingGsonUrl = [];
                     // 用于添加建筑物图层们的选中/框选事件
@@ -596,10 +521,10 @@
                                     layername,
                                     zIndex: zindex,
                                 });
-                                map.addLayer(buildingL);
-                                this.buildingLayers.push(buildingL);
+                                map?.addLayer(buildingL);
+                                this.buildingLayers?.push(buildingL);
                                 // 可能会执行两次
-                                const listener = (evt) => {
+                                const listener = (evt: Event) => {
                                     const source = evt.target;
                                     if (source.getState() === 'ready') {
                                         this.isUnLockViewByExtent = false;
@@ -632,10 +557,10 @@
                                             LAYERS: `${namespace}:${layername}`,
                                         },
                                     }),
-                                });
-                                map.addLayer(tiled);
+                                } as BaseTileOptions<TileWMS>);
+                                map?.addLayer(tiled);
                             } else {
-                                const vecL = loadGSONToVecLayer2({
+                                const vecL = loadGSONToVecLayer({
                                     gsonUrl,
                                     layername,
                                     zIndex: zindex,
@@ -648,21 +573,24 @@
                                         ? 19
                                         : undefined,
                                 });
-                                map.addLayer(vecL);
-                                const listener = (evt) => {
+                                map?.addLayer(vecL);
+                                const listener = (evt: Event) => {
                                     const source = evt.target;
                                     if (source.getState() === 'ready') {
-                                        vecL.getSource().un('change', listener);
+                                        vecL.getSource()?.un(
+                                            'change',
+                                            listener
+                                        );
                                     }
                                 };
-                                vecL.getSource().on('change', listener);
+                                vecL.getSource()?.on('change', listener);
                             }
                         } else if (type === 'img') {
                             // ‘img不只有影像地图，还有历史影像，要限制一下
 
                             // 找到切片影像的范围,设置未view的范围
                             const l = capabilitiesResult.Contents.Layer.find(
-                                (i) => i.Identifier.includes(layername)
+                                (i: any) => i.Identifier.includes(layername)
                             );
                             if (!l) {
                                 this.$message.error(
@@ -676,7 +604,7 @@
                                 ...fromLonLat(extent.slice(2, 4)),
                             ];
                             if (layername.includes('_yx')) {
-                                lockViewByExtent(extent2, map);
+                                map && lockViewByExtent(extent2, map);
                             }
                             var options = optionsFromCapabilities(
                                 capabilitiesResult,
@@ -691,17 +619,15 @@
                             }
                             // 不修改options.urls[0];的话,会造成地址生成的是, 缺少端口,造成访问不到对的位置
                             // ("http://local-dev1.jrnet888.com/geoserver/gwc/service/wmts?");
-                            options.urls[0] = '/geoserver/gwc/service/wmts?';
+                            let i = options.urls?.at(0);
+                            i = '/geoserver/gwc/service/wmts?';
                             let imgL = new TileLayer({
                                 visible: layername.includes('_yx'),
                                 name: layername,
                                 extent: extent2,
                                 source: new WMTS(options),
-                            });
-                            imgL && map.addLayer(imgL);
-                            this.$on('hook:destroyed', () => {
-                                imgL = null;
-                            });
+                            } as BaseTileOptions<WMTS>);
+                            imgL && map?.addLayer(imgL);
                         } else {
                             debugger;
                         }
@@ -717,266 +643,49 @@
                             tgL.setVisible(false);
                             tgL.setOpacity(0.7);
                             tgL.addEventListener('change:visible', (e) => {
-                                const visible = !e.oldValue;
-                                visible
-                                    ? (this.$refs.tuli.style.display = 'block')
-                                    : (this.$refs.tuli.style.display = 'none');
+                                const visible = !(e as any).oldValue;
+                                let display = (this.$refs.tuli as HTMLElement)
+                                    .style.display;
+                                display &&
+                                    (visible
+                                        ? (display = 'block')
+                                        : (display = 'none'));
                             });
                         }
                     }, 1000);
                     // 添加建筑物图层们的选中/框选事件
-                    this.addSelectBuildingInteraction(this.buildingLayers);
-
-                    // 加载自建地块图层图层列表
-                    // this.loadPlots();
+                    this.addSelectBuildingInteraction(
+                        this.buildingLayers as VectorImage<
+                            VectorSource<Geometry>
+                        >[]
+                    );
                 } else if (this.levelType === 'country') {
-                    // 第一屏都要加载城市图层, 具体城市图层
-                    getGeoServerBaseLayerUrl().then((r) => {
-                        const data = r.data;
-                        if (!data) {
-                            this.$message.error('未找到首屏项目基础地图配置');
-                            return;
-                        }
-                        const { geoserver, namespace, layers } = data;
-                        layers.forEach((layer) => {
-                            const { name: layername, type, zindex } = layer;
-                            const gsonUrl = `${geoserver}/${namespace}/ows?service=WFS&request=GetFeature&srsname=EPSG:3857&typeName=${namespace}:${layername}&outputFormat=application/json`;
-                            layername === 'project' &&
-                                map.addLayer(
-                                    loadGSONToVecLayer2({
-                                        gsonUrl,
-                                        layername: 'project',
-                                    })
-                                );
-                            // layername === "city" &&
-                            //   map.addLayer(this.loadCityGSONToVecLayer(gsonUrl));
-                            // 城市图层改为在下面加载, 创建一个空矢量图层,请求接口动态添加要素上去
-                        });
-
-                        // 添加城市图层
-                        var cityS = new VectorSource();
-                        const cityL = (this.cityL = new VectorLayer({
-                            name: 'city',
-                            source: cityS,
-                            style: function (feature) {
-                                const { projectNum, cityName, projectName } =
-                                    feature.getProperties();
-                                const style = new Style({
-                                    image: new Icon({
-                                        src: './position.png',
-                                    }),
-                                    text: new Text({
-                                        textAlign: 'left',
-                                        offsetX: 15,
-                                        font: 'normal 16px Arial',
-                                        text:
-                                            projectNum > 1
-                                                ? `${projectNum}`
-                                                : `${cityName}(${projectName})`,
-                                        fill: new Fill({
-                                            color: 'white',
-                                        }),
-                                    }),
-                                });
-                                return style;
-                            },
-                        }));
-                        map.addLayer(cityL);
-                        // 添加城市图层-要素
-                        listAllProject({}).then((r) => {
-                            const allProjs = r.data.filter((i) => i.location);
-                            const allProjs2 = allProjs.map((i) => {
-                                if (!i.city) return i;
-                                const citycodearr = i.city
-                                    .split(' ')
-                                    .join('')
-                                    .slice(1, -1)
-                                    .split(',');
-                                i.location = fromLonLat(
-                                    i.location.split(',').map(parseFloat)
-                                );
-                                i.cityName =
-                                    CodeToText[citycodearr[0]] +
-                                    CodeToText[citycodearr[1]];
-                                return i;
-                            });
-                            const allCities = allProjs2.map((i) => i.city);
-                            const theCitys = new Set(allCities);
-                            theCitys.forEach((i) => {
-                                // 一个城市添加一个点,有多个点的话合并显示
-                                const cityObjs = allProjs2.filter(
-                                    (j) => j.city === i
-                                );
-                                const cityObj = cityObjs.slice(0, 1)[0];
-                                const projectNum = allProjs2.filter(function (
-                                    j
-                                ) {
-                                    return j.city === i;
-                                }).length;
-                                const fea = new Feature({
-                                    geometry: new Point(cityObj.location),
-                                });
-                                const id = '';
-                                const projectStageVals = cityObjs.map(
-                                    (i) => i.projectStageVal
-                                );
-                                fea.setProperties(
-                                    Object.assign(cityObj, {
-                                        projectNum,
-                                        projectStageVals,
-                                    })
-                                );
-                                cityS.addFeature(fea);
-                                /* city: "[110000, 110100]"
-                  cityRegionVal: "京津冀"
-                  location: "116.407526,39.904030"
-                  locationName: "北京市"
-                  projectId: 164
-                  projectName: "1"
-                  projectNum: 2
-                  projectStageVal: "安置房回迁阶段
-              */
-                                if (projectNum > 1) {
-                                    const projs = allProjs2.filter(
-                                        (i) => i.city === cityObj.city
-                                    );
-                                    this.cityFeasPropsThatHasManyProj.push({
-                                        id: id,
-                                        projsum: projectNum,
-                                        city: cityObj.cityName,
-                                        projectInfoList: projs,
-                                    });
-                                }
-                            });
-                            // 超过1个项目,旁边显示项目列表,cityFeasProps动态绑定了overlay的元素
-                            // 用来构造overlay
-                            // 获取每个城市的详情
-                            this.$nextTick(() => {
-                                // 这里才能获取到element
-                                this.cityFeasPropsThatHasManyProj.forEach(
-                                    (cityFeasProps, index) => {
-                                        // 添加该城市的overlay
-                                        const center =
-                                            cityFeasProps.projectInfoList[0]
-                                                .location;
-                                        const ele = document.getElementById(
-                                            cityFeasProps.id
-                                        );
-                                        const overlay = new Overlay({
-                                            id: cityFeasProps.id,
-                                            belong: cityL,
-                                            offset: [10, 10],
-                                            pos: center,
-                                            position: undefined,
-                                            element: ele,
-                                        });
-                                        console.log(
-                                            '添加了cityOverlay',
-                                            cityFeasProps.id
-                                        );
-                                        map?.addOverlay(overlay);
-                                    }
-                                );
-                            });
-                        });
-
-                        const projectL = (this.projectL =
-                            map.getLayerByProperty('name', 'project'));
-                        // 只有特定缩放范围才显示项目信息overylay
-                        const projectSourceChangelistener = (evt) => {
-                            const source = evt.target;
-                            if (source.getState() === 'ready') {
-                                // 再这里设置显示范围, 因为如果在VectorLayer的options里设置
-                                // 那只有一开始视图不在其范围内,图层就不会被加载
-                                // 造成在enterLockViewByLayer中获取不到extent
-                                projectL.setMaxResolution(20);
-                                projectL.setMinResolution(0.5);
-
-                                // 添加项目overylay
-                                this.projectFeasProps = source
-                                    .getFeatures()
-                                    .map((fea) =>
-                                        // 设置属性对应的图层名,点击进入项目时,根据图层名找到图层源,进而找到要素
-                                        Object.assign(fea.getProperties(), {
-                                            id: fea
-                                                .getId()
-                                                .replace('project.', ''), //'project.60' -> 60
-                                            layername: 'project',
-                                        })
-                                    );
-                                // 添加overlay介绍项目信息
-                                this.$nextTick(() => {
-                                    this.projectFeasProps.forEach(
-                                        (projFeaProps) => {
-                                            // 获取要素中心
-                                            const feaExtent =
-                                                projFeaProps.geometry.getExtent();
-                                            const center = getCenter(feaExtent);
-                                            const overlay = new Overlay({
-                                                id: projFeaProps.id,
-                                                belong: projectL, //用于区分类型
-                                                offset: [10, 10],
-                                                pos: center,
-                                                position: undefined,
-                                                element:
-                                                    document.getElementById(
-                                                        projFeaProps.id
-                                                    ),
-                                            });
-                                            console.log(
-                                                '添加了projOverlay',
-                                                projFeaProps.id
-                                            );
-                                            overlay && map?.addOverlay(overlay);
-                                        }
-                                    );
-                                }); //nexttick结束
-
-                                // hover项目时弹出项目信息框
-                                var select = new Select({
-                                    condition: click,
-                                    layers: [projectL],
-                                });
-                                select.on('select', (e) => {
-                                    if (e.selected.length > 0) {
-                                        const feature = e.selected[0];
-                                        const projectId = feature
-                                            .getId()
-                                            .replace('project.', '');
-                                        getProjectInfoByProjectId({
-                                            projectId: projectId,
-                                        }).then((r) => {
-                                            if (!r.data) {
-                                                debugger;
-                                            }
-                                            this.projInfo = r.data;
-                                        });
-                                    } else {
-                                        this.projInfo = {};
-                                    }
-                                });
-                                map.addInteraction(select);
-                            }
-                            projectL
-                                .getSource()
-                                .un('change', projectSourceChangelistener);
-                        };
-                        projectL
-                            .getSource()
-                            .on('change', projectSourceChangelistener);
-                    });
+                    // 只有特定缩放范围才显示项目信息overylay
+                    // const projectSourceChangelistener = (evt) => {
+                    //     const source = evt.target;
+                    //     if (source.getState() === 'ready') {
+                    //         // 再这里设置显示范围, 因为如果在VectorLayer的options里设置
+                    //         // 那只有一开始视图不在其范围内,图层就不会被加载
+                    //         // 造成在enterLockViewByLayer中获取不到extent
+                    //         projectL.setMaxResolution(20);
+                    //         projectL.setMinResolution(0.5);
+                    //     }
+                    // };
                 }
 
                 // 控制overlay的层级显示
                 map.on('moveend', (e) => {
                     // 实时获取当前缩放级别显示到界面控件上
-                    this.zoomLevel = Math.round(map?.getView().getZoom());
-
                     const zoom = map?.getView().getZoom(); //获取当前地图的缩放级别
+                    if (!zoom) return;
+                    this.zoomLevel = Math.round(zoom);
+
                     const overlays = map?.getOverlays().getArray();
+                    if (!overlays) return;
 
                     if (this.cityL) {
                         const cityOverlays = overlays.filter(
+                            // @ts-ignore
                             (i) => i.options.belong === this.cityL
                         );
                         if (zoom <= 4.5) {
@@ -985,6 +694,7 @@
                             );
                         } else {
                             cityOverlays.forEach(
+                                // @ts-ignore
                                 (i) => i && i.setPosition(i.options.pos)
                             );
                         }
@@ -992,10 +702,12 @@
 
                     if (this.projectL) {
                         const projOverlays = overlays.filter(
+                            // @ts-ignore
                             (i) => i.options.belong === this.projectL
                         );
                         if (16.6 >= zoom && zoom >= 15.5) {
                             projOverlays.forEach(
+                                // @ts-ignore
                                 (i) => i && i.setPosition(i.options.pos)
                             );
                         } else {
@@ -1007,9 +719,11 @@
                 });
                 // 大于某个级别才可以选择要素, 为map添加鼠标移动事件监听，当指向标注时改变鼠标光标状态
                 map.on('pointermove', (evt) => {
+                    if (!map) return;
                     var pixel = map?.getEventPixel(evt.originalEvent);
                     var hit = map?.hasFeatureAtPixel(pixel);
-                    if (map?.getView().getZoom() > this.zoomThatCanSelect) {
+                    const zoom = map?.getView()?.getZoom();
+                    if (zoom && zoom > this.zoomThatCanSelect) {
                         map.getTargetElement().style.cursor = hit
                             ? 'pointer'
                             : '';
@@ -1028,53 +742,14 @@
                                 layer.getProperties();
                             const props = feature.getProperties();
 
-                            if (layername === 'city') {
-                                // 多于一个项目的城市,点击显示所有项目的overlay
-                                if (props.projectNum > 1) {
-                                    const overlay = map.getOverlayById(
-                                        props.id
-                                    );
-                                    overlay &&
-                                        overlay.setPosition(
-                                            overlay.options.pos
-                                        );
-                                } else {
-                                    // 一个项目的城市,点击直接跳转到视图
-                                    if (
-                                        feature.getGeometry().getType() ===
-                                            'POINT' ||
-                                        feature.getGeometry().getType() ===
-                                            'MULTI_POINT'
-                                    ) {
-                                        this.$confirm(
-                                            `进入项目[${props.projectName}]?`,
-                                            '提示',
-                                            {
-                                                confirmButtonText: '确定',
-                                                cancelButtonText: '取消',
-                                                type: 'info',
-                                            }
-                                        )
-                                            .then(() => {
-                                                props.projectId &&
-                                                    this.handleEnterProjClick(
-                                                        props.projectId
-                                                    );
-                                            })
-                                            .catch(() => {});
-                                        // const center = feature.getGeometry().getExtent().slice(0, 2);
-                                        // map.getView().setCenter(center);
-                                        // map.getView().setZoom(12.6);
-                                    }
-                                }
-                            } else if (flag === 'building') {
+                            if (flag === 'building') {
                                 // 冒出建筑id,统一由select交互冒出
                                 // 但是选中建筑后,再次点击它,并不会再进select事件,也就不会再冒出,所以需要做以下处理
                                 const select = this.map
                                     .getInteractions()
                                     .getArray()
                                     .find(
-                                        (i) =>
+                                        (i: SelectInteraction) =>
                                             i.getProperties().name ===
                                             'highlightSelect'
                                     );
@@ -1082,7 +757,9 @@
                                 const clickedIsSelectedFwbh = select
                                     .getFeatures()
                                     .getArray()
-                                    .findIndex((i) => i.get('fwbh') === fwbh);
+                                    .findIndex(
+                                        (i: Feature) => i.get('fwbh') === fwbh
+                                    );
                                 if (clickedIsSelectedFwbh > -1) {
                                     this.$emit('clickBuildingOnMap', fwbh);
                                 }
@@ -1095,38 +772,38 @@
         },
         destroyed() {
             map?.getLayers().forEach((i) => {
-                map.removeLayer(i);
-                i = null;
+                map?.removeLayer(i);
             });
             map = null;
         },
         methods: {
             // 全局搜索（权利人/建筑物检索）
-            remoteSearchBuilding(query) {
+            remoteSearchBuilding(query: string) {
                 if (query == '') {
                     this.searchOptions = [];
                 } else if (query.length >= 3) {
-                    this.searchLoading = true;
-                    searchBuilding({
-                        cond: query,
-                    }).then((res) => {
-                        this.searchOptions = res.data;
-                        this.searchLoading = false;
-                    });
+                    this.searchOptions = [
+                        { measureNum: 'C20001F002001' },
+                        { measureNum: 'C20001F001001' },
+                        { measureNum: 'W30041F001001' },
+                        { measureNum: 'B30042F001001' },
+                        { measureNum: 'B00023F001001' },
+                        { measureNum: 'W00008F002001' },
+                        { measureNum: 'W00008F001001' },
+                    ];
                     this.searchNoDataText = '无数据';
                 } else {
                     this.searchNoDataText = '输入3个字符以上触发自动搜索';
                 }
             },
-            fitMapViewToBuildingByMeasureNum(measureNum) {
+            fitMapViewToBuildingByMeasureNum(measureNum: string) {
                 console.log('fitMapViewToBuildingByMeasureNum', measureNum);
                 if (measureNum) {
                     if (this.is3D) {
-                        const feas = map.getAllBuildingFeas();
-                        this.$refs.cesiumMap.flyToBuildingByMeasureNum(
-                            measureNum,
-                            feas
-                        );
+                        const feas = map?.getAllBuildingFeas();
+                        (
+                            this.$refs?.cesiumMap as any
+                        )?.flyToBuildingByMeasureNum(measureNum, feas);
                     } else {
                         let foundFlag = false;
                         const interval = setInterval(() => {
@@ -1135,10 +812,11 @@
                                 'flag',
                                 'building'
                             );
-                            const feas = [];
-                            layers.forEach((layer) =>
-                                feas.push(...layer.getSource().getFeatures())
-                            );
+                            const feas: Feature[] = [];
+                            layers.forEach((layer) => {
+                                const fs = layer?.getSource()?.getFeatures();
+                                if (fs) feas.push(...fs);
+                            });
                             // 直到建筑图层要素加载出来为止
                             feas.length > 0 && clearInterval(interval);
                             const fea = feas.find((i) => {
@@ -1150,22 +828,25 @@
                             if (fea) {
                                 // 设置搜索到的要素的样式未选中
                                 foundFlag = true;
-                                const select = map
+                                const select: SelectInteraction = map
                                     .getInteractions()
                                     .getArray()
                                     .find(
                                         (i) =>
                                             i.getProperties().name ===
                                             'highlightSelect'
-                                    );
-                                select.getFeatures().clear();
-                                select.getFeatures().push(fea);
-                                select.dispatchEvent({
-                                    type: 'select',
-                                    selected: [fea],
-                                });
+                                    ) as SelectInteraction;
+                                if (select) {
+                                    select.getFeatures().clear();
+                                    select.getFeatures().push(fea);
+                                    select.dispatchEvent({
+                                        type: 'select',
+                                        selected: [fea],
+                                    } as any);
+                                }
                                 const geom = fea.getGeometry();
-                                map.getView().fit(geom);
+                                geom &&
+                                    map.getView().fit(geom as SimpleGeometry);
                                 this.$message.success(measureNum);
                             }
                         }, 1000);
@@ -1179,21 +860,23 @@
                 }
             },
             // 子组件传回的统计对比方法
-            statistics(id) {
+            toolboxStatistics(id: string) {
                 this.showStatistics = true;
                 this.statisticsId = id;
             },
-            addSelectBuildingInteraction(layers) {
+            // 框选, 点选
+            addSelectBuildingInteraction(layers: VectorImage<VectorSource>[]) {
                 // 添加建筑物的点击高亮
                 var selectSingleClick = new Select({
                     condition: (mapBrowserEvent) => {
+                        const zoom = map?.getView()?.getZoom();
                         // 放大到一定范围才可以选择房屋
-                        return (
-                            click(mapBrowserEvent) &&
-                            map.getView().getZoom() > this.zoomThatCanSelect
-                        );
+                        return zoom
+                            ? click(mapBrowserEvent) &&
+                                  zoom > this.zoomThatCanSelect
+                            : false;
                     },
-                    style: getFWSelectedStyleFunc,
+                    style: getFWSelectedStyleFunc as StyleFunction,
                     layers: layers,
                 });
                 selectSingleClick.on('select', (e) => {
@@ -1204,7 +887,8 @@
                     }
                 });
                 selectSingleClick.set('name', 'highlightSelect');
-                var selectedFeatures = selectSingleClick.getFeatures();
+                var selectedFeatures: Collection<Feature<Geometry>> =
+                    selectSingleClick.getFeatures();
 
                 //一个DragBox交互，用于通过绘图框选择要素
                 var dragBox = new DragBox({
@@ -1214,26 +898,62 @@
                 dragBox.on('boxend', () => {
                     var rotation = this.map.getView().getRotation();
                     var oblique = rotation % (Math.PI / 2) !== 0;
-                    var candidateFeatures = oblique ? [] : selectedFeatures;
+                    var candidateFeatures:
+                        | Collection<Feature<Geometry>>
+                        | any[] = oblique ? [] : selectedFeatures;
                     var extent = dragBox.getGeometry().getExtent();
-                    this.buildingLayers.forEach((i) => {
+                    this.buildingLayers?.forEach((i) => {
                         const vectorSource = i.getSource();
-                        vectorSource.forEachFeatureIntersectingExtent(
+                        vectorSource?.forEachFeatureIntersectingExtent(
                             extent,
-                            (feature) => {
+                            (feature: Feature) => {
                                 candidateFeatures.push(feature);
                             }
                         );
                     });
-                    let props = candidateFeatures
+                    let props = (
+                        candidateFeatures as Collection<Feature<Geometry>>
+                    )
                         .getArray()
                         .map((i) => i.getProperties());
                     let fwbhs = props.map((i) => i.fwbh || i['测绘编号']);
-                    getRightPersonsByMeasureNums({ measureNums: fwbhs }).then(
-                        (r) => {
-                            this.multiSelectedProps = r.data;
-                        }
-                    );
+
+                    const r = {
+                        res: '0',
+                        msg: '操作成功!',
+                        data: [
+                            {
+                                rightPerson: '',
+                                measureNum: 'W30079F003001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'W30079F004001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'C30077F002001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'W30079F002001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'B30053F001001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'C30046F001001',
+                            },
+                            {
+                                rightPerson: '',
+                                measureNum: 'B00082F001001',
+                            },
+                        ],
+                    };
+
+                    this.multiSelectedProps = r.data;
 
                     //倾斜旋转视图时，框范围将超出其几何形状，因此框和候选要素几何围绕公共锚旋转
                     //确认这一点，并且框的几何形状与其对齐范围，几何相交
@@ -1243,20 +963,16 @@
                         geometry.rotate(-rotation, anchor);
                         var extent$1 = geometry.getExtent();
                         candidateFeatures.forEach((feature) => {
-                            var geometry = feature.getGeometry().clone();
-                            geometry.rotate(-rotation, anchor);
-                            if (geometry.intersectsExtent(extent$1)) {
+                            var geometry = feature?.getGeometry()?.clone();
+                            geometry?.rotate(-rotation, anchor);
+                            if (geometry?.intersectsExtent(extent$1)) {
                                 selectedFeatures.push(feature);
                             }
                         });
                         props = selectedFeatures
                             .getArray()
                             .map((i) => i.getProperties());
-                        getRightPersonsByMeasureNums({
-                            measureNums: fwbhs,
-                        }).then((r) => {
-                            this.multiSelectedProps = r.data;
-                        });
+                        this.multiSelectedProps = r.data;
                     }
                 });
                 //绘制新框和单击地图时清除选择
@@ -1274,153 +990,14 @@
                 });
                 this.map.addInteraction(selectSingleClick);
             },
-            handleClickBuildingOnCesiumMap(fwbh) {
+            // 查询建筑物信息
+            handleClickBuildingOnCesiumMap(fwbh: string) {
                 this.$emit('clickBuildingOnMap', fwbh);
             },
-            // 加载自建地块
-            loadPlots() {
-                const map = this.map;
-                getGroundsByProjId({ projectId: this.projectId }).then((r) => {
-                    // 地块分两种,1.加载自己绘制的地块(只显示自己,不高亮相关房屋)  2.项目中新建的地块(没有自己的图形,只用来高亮相关房屋)
-                    // 加载自己绘制的地块
-                    const grounds = r.data;
-                    this.grounds = grounds;
-                    // 先清空
-                    grounds.forEach((ground) => {
-                        const layer = map.getLayerByProperty(
-                            'name',
-                            ground.layerName
-                        );
-                        map.removeLayer(layer);
-                    });
-                    grounds.forEach((ground) => {
-                        const geojsonObject = JSON.parse(ground.geojson);
-                        let vectorSource = new VectorSource({
-                            // 转换坐标为3857(米)
-                            features: new GeoJSON().readFeatures(
-                                geojsonObject,
-                                {
-                                    dataProjection: 'EPSG:4326',
-                                    featureProjection: 'EPSG:3857',
-                                }
-                            ),
-                        });
-                        this.$on('hook:destroyed', () => (vectorSource = null));
-                        const layer = new VectorLayer({
-                            zIndex: 10,
-                            name: ground.layerName,
-                            source: vectorSource,
-                            visible: false,
-                            style: function (feature) {
-                                const style = new Style({
-                                    stroke: new Stroke({
-                                        width: 1,
-                                        color: 'lightblue',
-                                    }),
-                                    fill: new Fill({
-                                        color: ground.styleColor,
-                                    }),
-                                    text: new Text({
-                                        font: 'normal 16px Arial',
-                                        text: ground.layerName,
-                                        fill: new Fill({
-                                            color: 'white',
-                                        }),
-                                    }),
-                                });
-                                return style;
-                            },
-                        });
-                        map.addLayer(layer);
-                    });
-
-                    // 加载项目中自己定义的地块
-                    clanGroundGetGround().then((r2) => {
-                        if (!r2.data) return;
-                        const layerNames = r.data.map((i) => i.layerName); //自建的地块们;
-                        const uniquePlots = r2.data.filter(
-                            (i) => !layerNames.includes(i.groundName)
-                        );
-                        uniquePlots.forEach((i) => {
-                            const { id, groundName, measureNumAry } = i;
-                            this.grounds.push({
-                                layerName: groundName,
-                                styleColor: '',
-                                groundNum: id,
-                                measureNums: measureNumAry || [],
-                            });
-                            let vectorSource = new VectorSource();
-                            this.$on(
-                                'hook:destroyed',
-                                () => (vectorSource = null)
-                            );
-                            const layer = new VectorLayer({
-                                name: groundName,
-                                source: vectorSource,
-                                visible: false,
-                            });
-                            layer.addEventListener('change:visible', (e) => {
-                                const select = map
-                                    .getInteractions()
-                                    .getArray()
-                                    .find(
-                                        (i) =>
-                                            i.getProperties().name ===
-                                            'highlightSelect'
-                                    );
-                                select.getFeatures().clear();
-                                const visible = !e.oldValue;
-                                if (visible) {
-                                    // 高亮 ground.measureNums 的建筑
-                                    (measureNumAry || []).forEach(
-                                        (measureNum) => {
-                                            if (!measureNum) return;
-                                            const fea =
-                                                getBuildingFeaByMeasureNum(
-                                                    measureNum,
-                                                    map
-                                                );
-                                            if (fea) {
-                                                select.getFeatures().push(fea);
-                                                // select.dispatchEvent({ type: "select", selected: [fea] });
-                                            }
-                                        }
-                                    );
-                                } else {
-                                    // 前面已经清除了,什么都不做
-                                }
-                            });
-                            map.addLayer(layer);
-                        });
-                    });
-                });
-            },
-            handleEnterProjClick(projectId) {
-                //'project.60'
-                const map = this.map;
-                // 隐藏overlay
-                const overlay = map.getOverlayById(projectId);
-                overlay && overlay.setPosition(undefined);
-                console.log('项目id', projectId);
-                selectProject({
-                    projectId: projectId,
-                }).then((res) => {
-                    this.$store.commit('app/SET_PROJECT_ID', projectId);
-                    // 路由跳到该项目
-                    this.$router.push('/mappage/projectOverview/index');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 100);
-                });
-            },
-            handleCloseMoreProjClick(id) {
-                const map = this.map;
-                const overlay = map.getOverlayById(id);
-                overlay && overlay.setPosition(undefined);
-            },
             // 切换地图显示类型
-            mapChange(maptype) {
-                this.$refs.twoMap.style.background = 'initial';
+            mapChange(maptype: string) {
+                const twoMap = this.$refs.twoMap;
+                (twoMap as HTMLElement).style.background = 'initial';
 
                 if (maptype == '航拍实景') {
                     // if (this.isUnLockViewByExtent) return;
@@ -1440,12 +1017,12 @@
                         return;
                     }
                     arr.forEach((i) => {
-                        map.getLayersByProperty('name', i).forEach((i) =>
+                        map?.getLayersByProperty('name', i).forEach((i) =>
                             i.setVisible(false)
                         );
                     });
                     if (maptype == '空图层') {
-                        this.$refs.twoMap.style.background = 'black';
+                        (twoMap as HTMLElement).style.background = 'black';
                     } else {
                         map.getLayersByProperty('name', maptype).forEach((i) =>
                             i.setVisible(true)
@@ -1672,13 +1249,6 @@
                 right: 0;
                 color: #fff;
                 font-size: 14px;
-            }
-            &:hover,
-            &.active {
-                border-color: #006c69;
-                span {
-                    background-color: #006c69;
-                }
             }
         }
     }

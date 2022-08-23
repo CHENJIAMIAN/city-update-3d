@@ -311,12 +311,12 @@ export function loadGSONToVecLayer({
     visible,
     minZoom,
 }: {
-    flag: boolean;
+    flag?: boolean;
     gsonUrl: string;
     layername: string;
     zIndex: number;
     visible: boolean;
-    minZoom: number;
+    minZoom: number | undefined;
 }) {
     var vectorSource = new VectorSource({
         url: gsonUrl,

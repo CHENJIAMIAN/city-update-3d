@@ -528,7 +528,8 @@
     import GeoJSON from 'ol/format/GeoJSON';
     import { map } from '@/views/map/index.vue';
 
-    export default {
+    import { defineComponent } from 'vue';
+    export default defineComponent({
         name: 'LayerControl',
         components: {  },
         props: {
@@ -1507,7 +1508,7 @@
                 );
             },
         },
-    };
+    });
 </script>
 
 <style lang="scss" scoped>
@@ -1540,10 +1541,6 @@
                     div:nth-child(2) {
                         -ms-grid-column: 2;
                         grid-column: 2;
-                    }
-                    .el-tabs__item.is-active {
-                        background: #006c69;
-                        color: white;
                     }
                     .el-tabs__item {
                         text-align: center;
