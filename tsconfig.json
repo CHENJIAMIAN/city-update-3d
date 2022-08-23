@@ -1,16 +1,23 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.web.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
+    "extends": "@vue/tsconfig/tsconfig.web.json",
+    "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["dom", "es5", "es2015.promise", "es2015", "es2022"],
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
 
-  "references": [
-    {
-      "path": "./tsconfig.config.json"
+    "references": [
+        {
+            "path": "./tsconfig.config.json"
+        }
+    ],
+
+    "vueCompilerOptions": {
+        "target": 2.7
+        // "target": 2, // For Vue version <= 2.6.14
     }
-  ]
 }
