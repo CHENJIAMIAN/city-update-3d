@@ -44,7 +44,7 @@ import CesiumNavigation from "cesium-navigation-es6";
 
 let viewer = new Viewer("cesiumContainer");
 
-var options = {};
+let options = {};
 // 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和 Cesium.Rectangle.
 options.defaultResetView = Rectangle.fromDegrees(80, 22, 130, 50);
 // 用于启用或禁用罗盘。true是启用罗盘，false是禁用罗盘。默认值为true。如果将选项设置为false，则罗盘将不会添加到地图中。

@@ -20,6 +20,8 @@ export const constantRoutes = [
         path: '/mappage',
         name: 'mappage',
         component: () => import('@/views/map/index.vue'),
+        // component: () => import
+        // ('@/views/map/components/CesiumMap.vue'),
         meta: { title: '地图页面' },
     },
 ];

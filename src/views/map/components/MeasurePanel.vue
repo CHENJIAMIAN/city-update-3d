@@ -23,6 +23,7 @@
     import * as turf from '@turf/turf';
     import { map } from '@/views/map/index.vue';
     import { defineComponent } from 'vue';
+    import { useMapStore } from '@/stores';
 
     export default defineComponent({
         name: 'MeasurePanel',
@@ -52,7 +53,11 @@
         },
         methods: {
             handleMeasurePanelClose() {
-                this.$store.dispatch('map/toggleMeasure', false);
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
+                    key: 'measuring',
+                    value: false,
+                });
             },
             // 测量
             startMeasure(LenthOrArea) {
@@ -509,24 +514,20 @@
                                 this.getBuildingMeasureNumsContainInDrawL();
                             // 根据measureNums获取对应建筑们的建筑面积和占地面积总和
                             // console.log(measureNums);
-                            getTwoAreaByMeasureNums({
-                                measureNums: measureNums,
-                            }).then((r) => {
-                                const { buildingArea, battleGroundArea } =
-                                    r.data;
-                                this.$notify({
-                                    title: '绘制范围内：',
-                                    message: `建筑物的建筑面积:${
-                                        buildingArea
-                                            ? buildingArea + '㎡'
-                                            : '查无数据'
-                                    },
+                            const { buildingArea = 2, battleGroundArea = 1 } =
+                                {};
+                            this.$notify({
+                                title: '绘制范围内：',
+                                message: `${measureNums}建筑物的建筑面积:${
+                                    buildingArea
+                                        ? buildingArea + '㎡'
+                                        : '查无数据'
+                                },
                 建筑物的占地面积:${
                     battleGroundArea ? battleGroundArea + '㎡' : '查无数据'
                 },
                 建筑物栋数:${measureNums.length}`,
-                                    offset: 200,
-                                });
+                                offset: 200,
                             });
                         });
                     }

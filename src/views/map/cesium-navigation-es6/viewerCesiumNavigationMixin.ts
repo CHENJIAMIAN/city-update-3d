@@ -17,7 +17,7 @@ import './styles/cesium-navigation.css'
  * @demo {@link http://localhost:8080/index.html|run local server with examples}
  *
  * @example
- * var viewer = new Cesium.Viewer('cesiumContainer');
+ * let viewer = new Cesium.Viewer('cesiumContainer');
  * viewer.extend(viewerCesiumNavigationMixin);
  */
 function viewerCesiumNavigationMixin(viewer, options) {
@@ -25,7 +25,7 @@ function viewerCesiumNavigationMixin(viewer, options) {
     throw new DeveloperError('viewer is required.')
   }
 
-  var cesiumNavigation = init(viewer, options)
+  let cesiumNavigation = init(viewer, options)
 
   cesiumNavigation.addOnDestroyListener((function (viewer) {
     return function () {
@@ -56,10 +56,10 @@ viewerCesiumNavigationMixin.mixinWidget = function (cesiumWidget, options) {
  * @param {Viewer|CesiumWidget} viewerCesiumWidget The Viewer or CesiumWidget instance
  * @param {{}} options the options
  */
-var init = function (viewerCesiumWidget, options) {
-  var cesiumNavigation = new CesiumNavigation(viewerCesiumWidget, options)
+let init = function (viewerCesiumWidget, options) {
+  let cesiumNavigation = new CesiumNavigation(viewerCesiumWidget, options)
 
-  var cesiumWidget = defined(viewerCesiumWidget.cesiumWidget) ? viewerCesiumWidget.cesiumWidget : viewerCesiumWidget
+  let cesiumWidget = defined(viewerCesiumWidget.cesiumWidget) ? viewerCesiumWidget.cesiumWidget : viewerCesiumWidget
 
   Object.defineProperties(cesiumWidget, {
     cesiumNavigation: {

@@ -29,13 +29,13 @@ Cesium.GeoJsonDataSource.crsNames['urn:ogc:def:crs:EPSG::3857'] =
 // https://zhuanlan.zhihu.com/p/46189487
 // https://www.jianshu.com/p/e0e0a62c5726
 
-var fixGltf = function (gltf: any) {
+let fixGltf = function (gltf: any) {
     if (!gltf.extensionsUsed) {
         return;
     }
 
-    var v = gltf.extensionsUsed.indexOf('KHR_technique_webgl');
-    var t = gltf.extensionsRequired.indexOf('KHR_technique_webgl');
+    let v = gltf.extensionsUsed.indexOf('KHR_technique_webgl');
+    let t = gltf.extensionsRequired.indexOf('KHR_technique_webgl');
     // 中招了。。
     if (v !== -1) {
         gltf.extensionsRequired.splice(t, 1, 'KHR_techniques_webgl');
@@ -45,7 +45,7 @@ var fixGltf = function (gltf: any) {
         gltf.extensions['KHR_techniques_webgl'].programs = gltf.programs;
         gltf.extensions['KHR_techniques_webgl'].shaders = gltf.shaders;
         gltf.extensions['KHR_techniques_webgl'].techniques = gltf.techniques;
-        var techniques = gltf.extensions['KHR_techniques_webgl'].techniques;
+        let techniques = gltf.extensions['KHR_techniques_webgl'].techniques;
 
         gltf.materials.forEach(function (material: any, index: number) {
             gltf.materials[index].extensions ||
@@ -57,15 +57,15 @@ var fixGltf = function (gltf: any) {
             gltf.materials[index].extensions['KHR_techniques_webgl'] =
                 gltf.materials[index].extensions['KHR_technique_webgl'];
 
-            var vtxfMaterialExtension =
+            let vtxfMaterialExtension =
                 gltf.materials[index].extensions['KHR_techniques_webgl'];
             vtxfMaterialExtension.technique ||
                 (vtxfMaterialExtension.technique =
                     gltf.materials[index].technique); // vtxf 181025
 
-            for (var value in vtxfMaterialExtension.values) {
-                var us = techniques[vtxfMaterialExtension.technique].uniforms;
-                for (var key in us) {
+            for (let value in vtxfMaterialExtension.values) {
+                let us = techniques[vtxfMaterialExtension.technique].uniforms;
+                for (let key in us) {
                     if (us[key] === value) {
                         vtxfMaterialExtension.values[key] =
                             vtxfMaterialExtension.values[value];
@@ -77,13 +77,13 @@ var fixGltf = function (gltf: any) {
         });
 
         techniques.forEach(function (t: any) {
-            for (var attribute in t.attributes) {
-                var name = t.attributes[attribute];
+            for (let attribute in t.attributes) {
+                let name = t.attributes[attribute];
                 t.attributes[attribute] = t.parameters[name];
             }
 
-            for (var uniform in t.uniforms) {
-                var name = t.uniforms[uniform];
+            for (let uniform in t.uniforms) {
+                let name = t.uniforms[uniform];
                 t.uniforms[uniform] = t.parameters[name];
             }
         });

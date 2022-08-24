@@ -144,11 +144,11 @@
             },
             add3DFlyPath(viewer) {
                 this.viewer = viewer;
-                var scene = viewer.scene;
-                var canvas = viewer.canvas;
-                var startMousePosition;
-                var mousePosition;
-                var flags = {
+                let scene = viewer.scene;
+                let canvas = viewer.canvas;
+                let startMousePosition;
+                let mousePosition;
+                let flags = {
                     looking: false,
                     moveForward: false,
                     moveBackward: false,
@@ -157,9 +157,9 @@
                     moveLeft: false,
                     moveRight: false,
                 };
-                var handler = new Cesium.ScreenSpaceEventHandler(canvas);
-                var ellipsoid = scene.globe.ellipsoid;
-                var camera = viewer.camera;
+                let handler = new Cesium.ScreenSpaceEventHandler(canvas);
+                let ellipsoid = scene.globe.ellipsoid;
+                let camera = viewer.camera;
                 let cameraViews = (window.cameraViews = {});
                 let keydownListener = () => {};
                 let keyupListener = () => {};
@@ -275,7 +275,7 @@
                             };
 
                             keydownListener = (e) => {
-                                var flagName = getFlagForKeyCode(e.keyCode);
+                                let flagName = getFlagForKeyCode(e.keyCode);
                                 if (typeof flagName !== 'undefined') {
                                     flags[flagName] = true;
                                 }
@@ -286,7 +286,7 @@
                                 false
                             );
                             keyupListener = (e) => {
-                                var flagName = getFlagForKeyCode(e.keyCode);
+                                let flagName = getFlagForKeyCode(e.keyCode);
                                 if (typeof flagName !== 'undefined') {
                                     flags[flagName] = false;
                                 }
@@ -327,31 +327,31 @@
                                 }
                                 if (flags.looking) {
                                     // 不断得获取计算和设置拖动后的相机偏移
-                                    var width = canvas.clientWidth;
-                                    var height = canvas.clientHeight;
+                                    let width = canvas.clientWidth;
+                                    let height = canvas.clientHeight;
 
                                     // Coordinate (0.0, 0.0) will be where the mouse was clicked.
-                                    var x =
+                                    let x =
                                         (mousePosition.x -
                                             startMousePosition.x) /
                                         width;
-                                    var y =
+                                    let y =
                                         -(
                                             mousePosition.y -
                                             startMousePosition.y
                                         ) / height;
 
-                                    var lookFactor = 0.05;
+                                    let lookFactor = 0.05;
                                     camera.lookRight(x * lookFactor);
                                     camera.lookUp(y * lookFactor);
                                 }
 
                                 //根据相机到椭球表面的距离更改移动速度。
-                                var cameraHeight =
+                                let cameraHeight =
                                     ellipsoid.cartesianToCartographic(
                                         camera.position
                                     ).height;
-                                var moveRate = cameraHeight / 100.0;
+                                let moveRate = cameraHeight / 100.0;
 
                                 if (flags.moveForward) {
                                     camera.moveForward(moveRate);
@@ -466,7 +466,8 @@
                     (checked) => {
                         clearFlyPath();
                         exitRecordMode();
-                        this.$store.commit('map/CHANGE_MAP_STATE', {
+                        const $store = useMapStore();
+                        $store.CHANGE_MAP_STATE({
                             key: 'showFlyPathPanel',
                             value: false,
                         });

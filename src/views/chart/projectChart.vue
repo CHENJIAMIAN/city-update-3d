@@ -425,6 +425,7 @@
     import Overlay from 'ol/Overlay';
     import { defineComponent } from 'vue';
     import type Feature from 'ol/Feature';
+    import type { default as SelectInteraction } from 'ol/interaction/Select';
 
     export default defineComponent({
         components: {},
@@ -440,7 +441,7 @@
             },
         },
         data() {
-            let select: any | undefined;
+            let select: SelectInteraction | undefined;
             let drawLInteraction: Interaction | undefined;
             let modifyLInteraction: Interaction | undefined;
             return {
@@ -632,11 +633,13 @@
                 }
             },
             exitDrawing() {
+                const $store = useMapStore();
                 this.isDrawing = false;
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                $store.CHANGE_MAP_STATE({
                     key: 'isDrawingRegion',
                     value: false,
                 });
+
                 this.measureNums = [];
                 if (map) {
                     map.removeInteraction(this.drawLInteraction);
@@ -703,10 +706,12 @@
             },
             initDrawLayer() {
                 this.isDrawing = true;
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'isDrawingRegion',
                     value: true,
                 });
+
                 const drawS = (this.drawS = new VectorSource({ wrapX: false }));
                 const vector = (this.drawL = new VectorLayer({
                     name: '自定义绘制图层',
@@ -945,12 +950,12 @@
             },
             // 导出统计图表（图片）
             downloadImg() {
-                var imageDom = document.querySelector('.imageDom');
+                let imageDom = document.querySelector('.imageDom');
                 html2canvas(imageDom).then((canvas) => {
                     // 转成图片，生成base64图片
-                    var imgUrl = canvas.toDataURL('image/png');
+                    let imgUrl = canvas.toDataURL('image/png');
                     // 下载图片
-                    var eleLink = document.createElement('a');
+                    let eleLink = document.createElement('a');
                     eleLink.href = imgUrl;
                     eleLink.download = '统计图';
                     document.body.appendChild(eleLink);

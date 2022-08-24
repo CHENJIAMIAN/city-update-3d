@@ -2,15 +2,15 @@
 import { knockout, SvgPathBindingHandler } from 'cesium'
 import KnockoutMarkdownBinding from './KnockoutMarkdownBinding'
 import KnockoutHammerBinding from './KnockoutHammerBinding'
-var Knockout = knockout
-var registerKnockoutBindings = function () {
+let Knockout = knockout
+let registerKnockoutBindings = function () {
   SvgPathBindingHandler.register(Knockout)
   KnockoutMarkdownBinding.register(Knockout)
   KnockoutHammerBinding.register(Knockout)
 
   Knockout.bindingHandlers.embeddedComponent = {
     init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-      var component = Knockout.unwrap(valueAccessor())
+      let component = Knockout.unwrap(valueAccessor())
       component.show(element)
       return { controlsDescendantBindings: true }
     },

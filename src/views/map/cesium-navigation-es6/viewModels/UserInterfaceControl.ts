@@ -1,6 +1,6 @@
 import { defined, DeveloperError, knockout } from 'cesium'
 
-var Knockout = knockout;
+let Knockout = knockout;
 /**
  * The view-model for a control in the user interface
  *
@@ -10,7 +10,7 @@ var Knockout = knockout;
  *
  * @param {Terria} terria The Terria instance.
  */
-var UserInterfaceControl = function (terria) {
+let UserInterfaceControl = function (terria) {
   if (!defined(terria)) {
     throw new DeveloperError('terria is required')
   }

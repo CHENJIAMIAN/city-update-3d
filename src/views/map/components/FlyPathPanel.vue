@@ -177,7 +177,7 @@
                 this.clearFlyingOrFlyPath();
             },
             addFlyPointListener(movement) {
-                var scene = viewer.scene;
+                let scene = viewer.scene;
                 let cartesian = viewer.camera.pickEllipsoid(
                     movement.position,
                     scene.globe.ellipsoid

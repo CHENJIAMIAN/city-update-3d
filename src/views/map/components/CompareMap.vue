@@ -47,6 +47,7 @@
 
     export let map = null;
     import { defineComponent } from 'vue';
+    import { useMapStore } from '@/stores';
     export default defineComponent({
         components: {
             CompareMapLayerControl,
@@ -120,13 +121,13 @@
                         let imgL;
                         if (layername.includes('_yx')) {
                             // WMTS的方式加载
-                            var parser = new WMTSCapabilities();
+                            let parser = new WMTSCapabilities();
                             fetch(
                                 '/geoserver/gwc/service/wmts?REQUEST=GetCapabilities'
                             )
                                 .then((response) => response.text())
                                 .then((text) => {
-                                    var result = parser.read(text);
+                                    let result = parser.read(text);
                                     // 找到切片影像的范围,设置未view的范围
                                     const extent = result.Contents.Layer.find(
                                         (i) => i.Identifier.includes(layername)
@@ -135,7 +136,7 @@
                                         ...fromLonLat(extent.slice(0, 2)),
                                         ...fromLonLat(extent.slice(2, 4)),
                                     ];
-                                    var options = optionsFromCapabilities(
+                                    let options = optionsFromCapabilities(
                                         result,
                                         {
                                             layer: `${namespace}:${layername}`,
@@ -200,7 +201,7 @@
             }
 
             // 两个map实例不能引用同一个layer实例,不然会只显示一个
-            // var tdtVec2 = cloneDeep(tdtVec);//cloneDeep也不行，还是会操作到同一份图层
+            // let tdtVec2 = cloneDeep(tdtVec);//cloneDeep也不行，还是会操作到同一份图层
 
             // 天地图矢量图层
             const tdtVec = new TileLayer({
@@ -267,7 +268,7 @@
         },
         methods: {
             loadGSONToVecLayer({ gsonUrl, layername, zindex, visible }) {
-                var vectorSource = new VectorSource({
+                let vectorSource = new VectorSource({
                     url: gsonUrl,
                     format: new GeoJSON(),
                 });
@@ -284,7 +285,7 @@
                 // });
             },
             loadBuildingGSONToVecLayer({ gsonUrl, layername, zindex }) {
-                var vectorSource = new VectorSource({
+                let vectorSource = new VectorSource({
                     url: gsonUrl,
                     format: new GeoJSON(),
                 });
@@ -302,7 +303,8 @@
                 return layer;
             },
             handleExitClick() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'showCompareMap',
                     value: false,
                 });

@@ -12,7 +12,7 @@ import NavigationControl from './NavigationControl'
  *
  * @param {Terria} terria The Terria instance.
  */
-var ResetViewNavigationControl = function (terria) {
+let ResetViewNavigationControl = function (terria) {
   NavigationControl.apply(this, arguments)
 
   /**
@@ -59,20 +59,20 @@ ResetViewNavigationControl.prototype.resetView = function () {
   if (this.navigationLocked) {
     return
   }
-  var scene = this.terria.scene
+  let scene = this.terria.scene
 
-  var sscc = scene.screenSpaceCameraController
+  let sscc = scene.screenSpaceCameraController
   if (!sscc.enableInputs) {
     return
   }
 
   this.isActive = true
 
-  var camera = scene.camera
+  let camera = scene.camera
 
   if (defined(this.terria.trackedEntity)) {
     // when tracking do not reset to default view but to default view of tracked entity
-    var trackedEntity = this.terria.trackedEntity
+    let trackedEntity = this.terria.trackedEntity
     this.terria.trackedEntity = undefined
     this.terria.trackedEntity = trackedEntity
   } else {

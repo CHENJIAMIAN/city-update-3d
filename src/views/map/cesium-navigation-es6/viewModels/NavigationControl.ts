@@ -8,7 +8,7 @@ import UserInterfaceControl from './UserInterfaceControl'
  *
  * @param {Terria} terria The Terria instance.
  */
-var NavigationControl = function (terria) {
+let NavigationControl = function (terria) {
   UserInterfaceControl.apply(this, arguments)
 }
 

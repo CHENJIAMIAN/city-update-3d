@@ -6,10 +6,10 @@ import svgCompassOuterRing from '../svgPaths/svgCompassOuterRing'
 import svgCompassGyro from '../svgPaths/svgCompassGyro'
 import svgCompassRotationMarker from '../svgPaths/svgCompassRotationMarker'
 import Utils from '../core/Utils'
-// var CesiumMath = Math;
-var Knockout = knockout;
+// let CesiumMath = Math;
+let Knockout = knockout;
 
-var NavigationViewModel = function (options) {
+let NavigationViewModel = function (options) {
   this.terria = options.terria
   this.eventHelper = new EventHelper()
   this.enableZoomControls = (defined(options.enableZoomControls)) ? options.enableZoomControls : true
@@ -55,7 +55,7 @@ var NavigationViewModel = function (options) {
 
   Knockout.track(this, ['controls', 'showCompass', 'heading', 'isOrbiting', 'orbitCursorAngle', 'isRotating'])
 
-  var that = this
+  let that = this
 
   NavigationViewModel.prototype.setNavigationLocked = function (locked) {
     this.navigationLocked = locked
@@ -98,7 +98,7 @@ NavigationViewModel.prototype.destroy = function () {
 }
 
 NavigationViewModel.prototype.show = function (container) {
-  var testing
+  let testing
   if (this.enableZoomControls && this.enableCompass) {
     testing = '<div class="compass" title="" data-bind="visible: showCompass, event: { mousedown: handleMouseDown, dblclick: handleDoubleClick }">' +
       '<div class="compass-outer-ring-background"></div>' +
@@ -209,10 +209,10 @@ NavigationViewModel.prototype.isLastControl = function (control) {
   return (control === this.controls[this.controls.length - 1])
 }
 
-var vectorScratch = new Cartesian2()
+let vectorScratch = new Cartesian2()
 
 NavigationViewModel.prototype.handleMouseDown = function (viewModel, e) {
-  var scene = this.terria.scene
+  let scene = this.terria.scene
   if (scene.mode === SceneMode.MORPHING) {
     return true
   }
@@ -220,18 +220,18 @@ NavigationViewModel.prototype.handleMouseDown = function (viewModel, e) {
     return true
   }
 
-  var compassElement = e.currentTarget
-  var compassRectangle = e.currentTarget.getBoundingClientRect()
-  var maxDistance = compassRectangle.width / 2.0
-  var center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
-  var clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
-  var vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
-  var distanceFromCenter = Cartesian2.magnitude(vector)
+  let compassElement = e.currentTarget
+  let compassRectangle = e.currentTarget.getBoundingClientRect()
+  let maxDistance = compassRectangle.width / 2.0
+  let center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
+  let clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
+  let vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
+  let distanceFromCenter = Cartesian2.magnitude(vector)
 
-  var distanceFraction = distanceFromCenter / maxDistance
+  let distanceFraction = distanceFromCenter / maxDistance
 
-  var nominalTotalRadius = 145
-  var norminalGyroRadius = 50
+  let nominalTotalRadius = 145
+  let norminalGyroRadius = 50
 
   if (distanceFraction < norminalGyroRadius / nominalTotalRadius) {
     orbit(this, compassElement, vector)
@@ -244,15 +244,15 @@ NavigationViewModel.prototype.handleMouseDown = function (viewModel, e) {
   }
 }
 
-var oldTransformScratch = new Matrix4()
-var newTransformScratch = new Matrix4()
-var centerScratch = new Cartesian3()
+let oldTransformScratch = new Matrix4()
+let newTransformScratch = new Matrix4()
+let centerScratch = new Cartesian3()
 
 NavigationViewModel.prototype.handleDoubleClick = function (viewModel, e) {
-  var scene = viewModel.terria.scene
-  var camera = scene.camera
+  let scene = viewModel.terria.scene
+  let camera = scene.camera
 
-  var sscc = scene.screenSpaceCameraController
+  let sscc = scene.screenSpaceCameraController
 
   if (scene.mode === SceneMode.MORPHING || !sscc.enableInputs) {
     return true
@@ -275,7 +275,7 @@ NavigationViewModel.prototype.handleDoubleClick = function (viewModel, e) {
     }
   }
 
-  var center = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
+  let center = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
 
   if (!defined(center)) {
     // Globe is barely visible, so reset to home view.
@@ -284,11 +284,11 @@ NavigationViewModel.prototype.handleDoubleClick = function (viewModel, e) {
     return
   }
 
-  var cameraPosition = scene.globe.ellipsoid.cartographicToCartesian(camera.positionCartographic, new Cartesian3())
+  let cameraPosition = scene.globe.ellipsoid.cartographicToCartesian(camera.positionCartographic, new Cartesian3())
 
-  var surfaceNormal = scene.globe.ellipsoid.geodeticSurfaceNormal(center)
+  let surfaceNormal = scene.globe.ellipsoid.geodeticSurfaceNormal(center)
 
-  var focusBoundingSphere = new BoundingSphere(center, 0)
+  let focusBoundingSphere = new BoundingSphere(center, 0)
 
   camera.flyToBoundingSphere(focusBoundingSphere, {
     offset: new HeadingPitchRange(0,
@@ -309,15 +309,15 @@ NavigationViewModel.prototype.handleDoubleClick = function (viewModel, e) {
 NavigationViewModel.create = function (options) {
   // options.enableZoomControls = this.enableZoomControls;
   // options.enableCompass = this.enableCompass;
-  var result = new NavigationViewModel(options)
+  let result = new NavigationViewModel(options)
   result.show(options.container)
   return result
 }
 
 function orbit(viewModel, compassElement, cursorVector) {
-  var scene = viewModel.terria.scene
+  let scene = viewModel.terria.scene
 
-  var sscc = scene.screenSpaceCameraController
+  let sscc = scene.screenSpaceCameraController
 
   // do not orbit if it is disabled
   if (scene.mode === SceneMode.MORPHING || !sscc.enableInputs) {
@@ -368,14 +368,14 @@ function orbit(viewModel, compassElement, cursorVector) {
   viewModel.isOrbiting = true
   viewModel.orbitLastTimestamp = getTimestamp()
 
-  var camera = scene.camera
+  let camera = scene.camera
 
   if (defined(viewModel.terria.trackedEntity)) {
     // when tracking an entity simply use that reference frame
     viewModel.orbitFrame = undefined
     viewModel.orbitIsLook = false
   } else {
-    var center = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
+    let center = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
 
     if (!defined(center)) {
       viewModel.orbitFrame = Transforms.eastNorthUpToFixedFrame(camera.positionWC, scene.globe.ellipsoid, newTransformScratch)
@@ -387,16 +387,16 @@ function orbit(viewModel, compassElement, cursorVector) {
   }
 
   viewModel.orbitTickFunction = function (e) {
-    var timestamp = getTimestamp()
-    var deltaT = timestamp - viewModel.orbitLastTimestamp
-    var rate = (viewModel.orbitCursorOpacity - 0.5) * 2.5 / 1000
-    var distance = deltaT * rate
+    let timestamp = getTimestamp()
+    let deltaT = timestamp - viewModel.orbitLastTimestamp
+    let rate = (viewModel.orbitCursorOpacity - 0.5) * 2.5 / 1000
+    let distance = deltaT * rate
 
-    var angle = viewModel.orbitCursorAngle + CesiumMath.PI_OVER_TWO
-    var x = Math.cos(angle) * distance
-    var y = Math.sin(angle) * distance
+    let angle = viewModel.orbitCursorAngle + CesiumMath.PI_OVER_TWO
+    let x = Math.cos(angle) * distance
+    let y = Math.sin(angle) * distance
 
-    var oldTransform
+    let oldTransform
 
     if (viewModel.navigationLocked) {
       return true
@@ -431,23 +431,23 @@ function orbit(viewModel, compassElement, cursorVector) {
   }
 
   function updateAngleAndOpacity(vector, compassWidth) {
-    var angle = Math.atan2(-vector.y, vector.x)
+    let angle = Math.atan2(-vector.y, vector.x)
     viewModel.orbitCursorAngle = CesiumMath.zeroToTwoPi(angle - CesiumMath.PI_OVER_TWO)
 
-    var distance = Cartesian2.magnitude(vector)
-    var maxDistance = compassWidth / 2.0
-    var distanceFraction = Math.min(distance / maxDistance, 1.0)
-    var easedOpacity = 0.5 * distanceFraction * distanceFraction + 0.5
+    let distance = Cartesian2.magnitude(vector)
+    let maxDistance = compassWidth / 2.0
+    let distanceFraction = Math.min(distance / maxDistance, 1.0)
+    let easedOpacity = 0.5 * distanceFraction * distanceFraction + 0.5
     viewModel.orbitCursorOpacity = easedOpacity
 
     // viewModel.terria.cesium.notifyRepaintRequired();
   }
 
   viewModel.orbitMouseMoveFunction = function (e) {
-    var compassRectangle = compassElement.getBoundingClientRect()
-    var center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
-    var clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
-    var vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
+    let compassRectangle = compassElement.getBoundingClientRect()
+    let center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
+    let clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
+    let vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
     updateAngleAndOpacity(vector, compassRectangle.width)
   }
 
@@ -475,10 +475,10 @@ function orbit(viewModel, compassElement, cursorVector) {
 }
 
 function rotate(viewModel, compassElement, cursorVector) {
-  var scene = viewModel.terria.scene
-  var camera = scene.camera
+  let scene = viewModel.terria.scene
+  let camera = scene.camera
 
-  var sscc = scene.screenSpaceCameraController
+  let sscc = scene.screenSpaceCameraController
   // do not rotate in 2D mode or if rotating is disabled
   if (scene.mode === SceneMode.MORPHING || scene.mode === SceneMode.SCENE2D || !sscc.enableInputs) {
     return
@@ -506,7 +506,7 @@ function rotate(viewModel, compassElement, cursorVector) {
     viewModel.rotateFrame = undefined
     viewModel.rotateIsLook = false
   } else {
-    var viewCenter = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
+    let viewCenter = Utils.getCameraFocus(viewModel.terria, true, centerScratch)
 
     if (!defined(viewCenter) || (scene.mode === SceneMode.COLUMBUS_VIEW && !sscc.enableLook && !sscc.enableTranslate)) {
       viewModel.rotateFrame = Transforms.eastNorthUpToFixedFrame(camera.positionWC, scene.globe.ellipsoid, newTransformScratch)
@@ -517,7 +517,7 @@ function rotate(viewModel, compassElement, cursorVector) {
     }
   }
 
-  var oldTransform
+  let oldTransform
   if (defined(viewModel.rotateFrame)) {
     oldTransform = Matrix4.clone(camera.transform, oldTransformScratch)
     camera.lookAtTransform(viewModel.rotateFrame)
@@ -530,24 +530,24 @@ function rotate(viewModel, compassElement, cursorVector) {
   }
 
   viewModel.rotateMouseMoveFunction = function (e) {
-    var compassRectangle = compassElement.getBoundingClientRect()
-    var center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
-    var clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
-    var vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
-    var angle = Math.atan2(-vector.y, vector.x)
+    let compassRectangle = compassElement.getBoundingClientRect()
+    let center = new Cartesian2((compassRectangle.right - compassRectangle.left) / 2.0, (compassRectangle.bottom - compassRectangle.top) / 2.0)
+    let clickLocation = new Cartesian2(e.clientX - compassRectangle.left, e.clientY - compassRectangle.top)
+    let vector = Cartesian2.subtract(clickLocation, center, vectorScratch)
+    let angle = Math.atan2(-vector.y, vector.x)
 
-    var angleDifference = angle - viewModel.rotateInitialCursorAngle
-    var newCameraAngle = CesiumMath.zeroToTwoPi(viewModel.rotateInitialCameraAngle - angleDifference)
+    let angleDifference = angle - viewModel.rotateInitialCursorAngle
+    let newCameraAngle = CesiumMath.zeroToTwoPi(viewModel.rotateInitialCameraAngle - angleDifference)
 
-    var camera = viewModel.terria.scene.camera
+    let camera = viewModel.terria.scene.camera
 
-    var oldTransform
+    let oldTransform
     if (defined(viewModel.rotateFrame)) {
       oldTransform = Matrix4.clone(camera.transform, oldTransformScratch)
       camera.lookAtTransform(viewModel.rotateFrame)
     }
 
-    var currentCameraAngle = -camera.heading
+    let currentCameraAngle = -camera.heading
     camera.rotateRight(newCameraAngle - currentCameraAngle)
 
     if (defined(viewModel.rotateFrame)) {

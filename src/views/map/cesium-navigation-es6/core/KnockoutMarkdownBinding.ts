@@ -2,9 +2,9 @@
 import MarkdownItSanitizer from 'markdown-it-sanitizer'
 import MarkdownIt from 'markdown-it'
 
-var htmlTagRegex = /<html(.|\s)*>(.|\s)*<\/html>/im
+let htmlTagRegex = /<html(.|\s)*>(.|\s)*<\/html>/im
 
-var md = new MarkdownIt({
+let md = new MarkdownIt({
   html: true,
   linkify: true
 })
@@ -14,7 +14,7 @@ md.use(MarkdownItSanitizer, {
   removeUnbalanced: false,
   removeUnknown: false
 })
-var KnockoutMarkdownBinding = {
+let KnockoutMarkdownBinding = {
   register: function (Knockout) {
     Knockout.bindingHandlers.markdown = {
       'init': function () {
@@ -27,22 +27,22 @@ var KnockoutMarkdownBinding = {
           Knockout.removeNode(element.firstChild)
         }
 
-        var rawText = Knockout.unwrap(valueAccessor())
+        let rawText = Knockout.unwrap(valueAccessor())
 
         // If the text contains an <html> tag, don't try to interpret it as Markdown because
         // we'll probably break it in the process.
-        var html
+        let html
         if (htmlTagRegex.test(rawText)) {
           html = rawText
         } else {
           html = md.render(rawText)
         }
 
-        var nodes = Knockout.utils.parseHtmlFragment(html, element)
+        let nodes = Knockout.utils.parseHtmlFragment(html, element)
         element.className = element.className + ' markdown'
 
-        for (var i = 0; i < nodes.length; ++i) {
-          var node = nodes[i]
+        for (let i = 0; i < nodes.length; ++i) {
+          let node = nodes[i]
           setAnchorTargets(node)
           element.appendChild(node)
         }
@@ -57,7 +57,7 @@ function setAnchorTargets (element) {
   }
 
   if (element.childNodes && element.childNodes.length > 0) {
-    for (var i = 0; i < element.childNodes.length; ++i) {
+    for (let i = 0; i < element.childNodes.length; ++i) {
       setAnchorTargets(element.childNodes[i])
     }
   }

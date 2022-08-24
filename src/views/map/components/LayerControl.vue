@@ -526,7 +526,7 @@
     import { createDefaultStyle, createEditingStyle } from 'ol/style/Style';
     import { extend } from 'ol/array';
     import GeoJSON from 'ol/format/GeoJSON';
-    import { map } from '@/views/map/index.vue';
+    import { map } from  '@/views/map/index.vue';
 
     import { defineComponent } from 'vue';
     export default defineComponent({

@@ -34,47 +34,6 @@
 
         <div class="form-container" v-loading="isLoading">
             <el-form
-                ref="form"
-                :model="form1"
-                label-width="120px"
-                class="form1"
-            >
-                <el-form-item label="赔偿方案" prop="planId">
-                    <el-select
-                        v-model="form1.planId"
-                        placeholder="请选择"
-                        style="width: auto"
-                    >
-                        <el-option
-                            v-for="item in planOption"
-                            :key="item.id"
-                            :label="item.planName"
-                            :value="item.id"
-                        />
-                    </el-select>
-                </el-form-item>
-                <div></div>
-                <el-form-item label="最大可回迁面积" prop="maxArea">
-                    <el-input v-model="form1.maxArea"></el-input>
-                </el-form-item>
-                <el-form-item label="权益面积单价" prop="areaMoney">
-                    <el-input
-                        :disabled="!form1.maxArea"
-                        v-model="form1.areaMoney"
-                        placeholder="请输入单价 元/平方"
-                    ></el-input>
-                </el-form-item>
-                <el-form-item label="预算计算方式" prop="formulaMode">
-                    <el-radio-group v-model="form1.formulaMode">
-                        <!-- <el-radio :label="1">最大弃产[不计算权益面积]</el-radio> -->
-                        <el-radio :label="2">最大弃产[计算权益面积]</el-radio>
-                        <!-- <el-radio :label="3">最大回迁[不计算权益面积]</el-radio> -->
-                        <el-radio :label="4">最大回迁[计算权益面积]</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-            </el-form>
-
-            <el-form
                 ref="form2"
                 :model="form2"
                 label-width="120px"
@@ -110,10 +69,10 @@
 </template>
 
 <script lang="ts">
-    import { Draw, Select, Modify } from 'ol/interaction';
+    import { Draw, Select, Modify, Interaction } from 'ol/interaction';
     import { getArea, getLength } from 'ol/sphere';
     import { LineString, Polygon } from 'ol/geom';
-    // import { map } from "@/views/map/index.vue";
+    import { map } from '@/views/map/index.vue';
     import { primaryAction } from 'ol/events/condition';
     import { unByKey } from 'ol/Observable';
     import { Vector as VectorLayer } from 'ol/layer';
@@ -123,29 +82,45 @@
 
     import Overlay from 'ol/Overlay';
     import { defineComponent } from 'vue';
+    import type Feature from 'ol/Feature';
+
+    import type { default as SelectInteraction } from 'ol/interaction/Select';
+    import type BaseLayer from 'ol/layer/Base';
+
     export default defineComponent({
         data() {
+            let select: SelectInteraction | undefined;
+            let drawLInteraction: Interaction | undefined;
+            let modifyLInteraction: Interaction | undefined;
+            let drawS: VectorSource | undefined;
+            let drawL: VectorLayer<VectorSource> | undefined;
+            let measureNum: string[] = [];
+
             return {
+                drawL,
+                drawS,
+                drawLInteraction,
+                modifyLInteraction,
+                select,
                 isLoading: false,
                 isDrawing: false,
                 planOption: [],
                 form1: {
-                    planId: '',
-                    measureNum: [],
-                    formulaMode: 2,
+                    measureNum,
                 },
                 form2: {},
             };
         },
         watch: {
             isDrawing(n, o) {
+                if (!map) return;
                 if (n) {
                     this.select = map
                         .getInteractions()
                         .getArray()
                         .find(
                             (i) => i.getProperties().name === 'highlightSelect'
-                        );
+                        ) as SelectInteraction;
                     this.select.setActive(false);
                     this.initDrawLayer();
                     this.startDrawLayer();
@@ -154,67 +129,42 @@
                 }
             },
         },
-        mounted() {
-            getAllcompensationPlan({
-                confirmStatus: 2,
-            }).then((res) => (this.planOption = res.data));
-        },
+        mounted() {},
         methods: {
             handleQuery() {
-                // 有 maxArea 最大可回迁面积则权益面积单价 areaMoney 必填
-                if (
-                    this.form1.maxArea &&
-                    (this.form1.areaMoney === '' ||
-                        this.form1.areaMoney === undefined)
-                ) {
-                    this.$message.error(
-                        '最大可回迁面积 和 权益面积单价 必须同时提交!'
-                    );
-                    return;
-                }
-                this.isLoading = true;
-                compensationDealComputeDeal(this.form1)
-                    .then((r) => {
-                        this.isLoading = false;
-                        this.$message.success('操作成功!');
-                        this.form2 = r.data;
-                    })
-                    .catch((e) => {
-                        this.isLoading = false;
-                    });
+                this.$message.success(`查询${this.form1.measureNum}的统计`);
             },
             exitDrawing() {
                 this.form1.measureNum = [];
-                if (map) {
-                    map.removeInteraction(this.drawLInteraction);
-                    map.removeInteraction(this.modifyLInteraction);
-                    this.drawS && this.drawS.clear();
-                    map.removeLayer(this.drawL);
-                    map.getViewport().oncontextmenu = null;
-                    const {
-                        helpTooltipOverLay,
-                        pointerMoveMeasureTipHandler,
-                        helpTooltipElement,
-                    } = map;
+                if (!map) return;
+                map.removeInteraction(this.drawLInteraction as Interaction);
+                map.removeInteraction(this.modifyLInteraction as Interaction);
+                this.drawS && this.drawS.clear();
+                this.drawL &&
+                    map.removeLayer(this.drawL as unknown as BaseLayer);
+                map.getViewport().oncontextmenu = null;
+                const {
+                    helpTooltipOverLay,
+                    pointerMoveMeasureTipHandler,
+                    helpTooltipElement,
+                } = map;
 
-                    map?.closerElements?.forEach((i) => {
-                        i.parentNode && i.parentNode.removeChild(i);
-                    });
-                    map.closerElements = [];
-                    map?.closerOverLays?.forEach((i) => {
-                        map.removeOverlay(i);
-                    });
-                    map.closerOverLays = [];
+                map?.closerElements?.forEach((i: HTMLElement) => {
+                    i.parentNode && i.parentNode.removeChild(i);
+                });
+                map.closerElements = [];
+                map.closerOverLays?.forEach((i: Overlay) => {
+                    map?.removeOverlay(i);
+                });
+                map.closerOverLays = [];
 
-                    helpTooltipOverLay && map.removeOverlay(helpTooltipOverLay);
-                    pointerMoveMeasureTipHandler &&
-                        map.un('pointermove', pointerMoveMeasureTipHandler);
-                    helpTooltipElement?.parentNode?.removeChild(
-                        helpTooltipElement
-                    );
-                }
+                helpTooltipOverLay && map.removeOverlay(helpTooltipOverLay);
+                pointerMoveMeasureTipHandler &&
+                    map.un('pointermove', pointerMoveMeasureTipHandler);
+                helpTooltipElement?.parentNode?.removeChild(helpTooltipElement);
             },
             initDrawLayer() {
+                if (!map) return;
                 const drawS = (this.drawS = new VectorSource({ wrapX: false }));
                 const vector = (this.drawL = new VectorLayer({
                     name: '自定义绘制图层',
@@ -222,9 +172,9 @@
                 }));
                 map.addLayer(vector);
 
-                let sketchFea;
-                let helpTooltipElement;
-                let helpTooltipOverLay;
+                let sketchFea: Feature;
+                let helpTooltipElement: HTMLElement;
+                let helpTooltipOverLay: Overlay;
                 const continuePolygonMsg = '单击以继续绘制多边形,双击结束绘制';
                 const formatArea = function (polygon) {
                     const area = getArea(polygon);
@@ -244,6 +194,7 @@
                 };
                 // 提示"点击开始绘图"
                 function createHelpTooltip() {
+                    if (!map) return;
                     if (helpTooltipElement && helpTooltipElement.parentNode) {
                         helpTooltipElement.parentNode.removeChild(
                             helpTooltipElement
@@ -289,6 +240,7 @@
                 map.getViewport().addEventListener('mouseout', func);
                 // 销毁事件
                 this.$on('hook:beforeDestroy', () => {
+                    if (!map) return;
                     map.getViewport().removeEventListener('mouseout', func);
                 });
 
@@ -300,13 +252,13 @@
 
                 createHelpTooltip();
 
-                let listener;
+                let listener: import('ol/events.js').EventsKey | undefined;
                 draw.on('drawstart', function (evt) {
                     sketchFea = evt.feature;
                     let tooltipCoord = evt.coordinate;
                     listener = sketchFea
-                        .getGeometry()
-                        .on('change', function (evt) {
+                        ?.getGeometry()
+                        ?.on('change', function (evt) {
                             const geom = evt.target;
                             let output;
                             if (geom instanceof Polygon) {
@@ -318,6 +270,7 @@
                         });
                 });
                 draw.on('drawend', (evt) => {
+                    if (!map) return;
                     const closerElement = document.createElement('div');
                     if (!map.closerElements) map.closerElements = [];
                     map.closerElements.push(closerElement);
@@ -333,10 +286,11 @@
                     map.addOverlay(closerOverLay);
                     closerElement.innerHTML = 'X';
                     closerOverLay.setPosition(
-                        evt.feature.getGeometry().getLastCoordinate()
+                        evt.feature?.getGeometry()?.getLastCoordinate()
                     );
                     closerElement.onclick = (e) => {
-                        this.drawS.removeFeature(evt.feature);
+                        if (!map) return;
+                        this?.drawS?.removeFeature(evt.feature);
                         map.removeOverlay(closerOverLay);
                         this.$nextTick((_) => {
                             this.saveDrawLayerGson();
@@ -344,9 +298,8 @@
                     };
                     evt.feature.closerElement = closerElement;
 
-                    sketchFea = null;
                     // 取消设置工具提示，以便可以创建一个新的
-                    unByKey(listener);
+                    listener && unByKey(listener);
 
                     // const geom = evt.feature.getGeometry();
                     // const coordinates = geom.getCoordinates()[0];
@@ -377,16 +330,15 @@
                 map.getViewport().oncontextmenu = (e) => {
                     if (!sketchFea) return;
                     const ponintNum = sketchFea
-                        .getGeometry()
-                        .getCoordinates()[0]
-                        .slice(0, -2).length;
+                        ?.getGeometry()
+                        ?.getCoordinates()[0]
+                        ?.slice(0, -2).length;
                     // 右键, 2个点, 退出
                     if (ponintNum <= 2) {
                         if (drawS.getFeatures().length < 1) {
                             this.exitDrawing();
                             this.initDrawLayer();
                             this.startDrawLayer();
-                            this.reRender();
                         } else {
                             draw.finishDrawing();
                             const fea = drawS.getFeatures().slice(-1)[0];
@@ -401,11 +353,14 @@
             },
             // 开始地块标绘
             startDrawLayer() {
-                map.addInteraction(this.drawLInteraction);
-                map.addInteraction(this.modifyLInteraction);
+                if (!map) return;
+                map.addInteraction(this.drawLInteraction as Interaction);
+                map.addInteraction(this.modifyLInteraction as Interaction);
             },
             saveDrawLayerGson() {
-                const drawLfeas = this.drawL.getSource().getFeatures();
+                if (!map) return;
+                const drawLfeas = this.drawL?.getSource()?.getFeatures();
+                if (!drawLfeas) return;
                 const gson = new GeoJSON().writeFeatures(drawLfeas, {
                     featureProjection: 'EPSG:3857', // 3857(单位米),设置后返回的是经纬度
                 });
@@ -417,7 +372,7 @@
                     );
                     return;
                 }
-                const buidingLfeas = [];
+                const buidingLfeas: Feature[] = [];
                 buidingLs.forEach((buidingL) =>
                     buidingLfeas.push(...buidingL.getSource().getFeatures())
                 );
@@ -426,13 +381,11 @@
                     const drawLfeaTurfPolygon =
                         format.writeFeatureObject(drawLfea); // convert to a turf.js feature
                     buidingLfeas.forEach((buidingLfea) => {
+                        const geometry = buidingLfea.getGeometry();
                         let buidingLfeaTurfPolygon;
-                        if (
-                            buidingLfea.getGeometry().getType() ===
-                            'MultiPolygon'
-                        ) {
+                        if (geometry?.getType() === 'MultiPolygon') {
                             buidingLfeaTurfPolygon = format.writeGeometryObject(
-                                buidingLfea.getGeometry().getPolygon(0)
+                                geometry?.getPolygon(0)
                             );
                         } else {
                             buidingLfeaTurfPolygon =
@@ -446,7 +399,7 @@
                         if (bool) {
                             const { fwbh, 测绘编号, protocolNum } =
                                 buidingLfea.getProperties();
-                            const measureNum = fwbh || 测绘编号;
+                            const measureNum: string = fwbh || 测绘编号;
                             !this.form1.measureNum.includes(measureNum) &&
                                 this.form1.measureNum.push(measureNum);
                         }

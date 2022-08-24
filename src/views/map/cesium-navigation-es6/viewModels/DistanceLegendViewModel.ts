@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
 import { defined, DeveloperError, EllipsoidGeodesic, Cartesian2, getTimestamp, EventHelper, knockout } from 'cesium'
 import loadView from '../core/loadView'
-var Knockout = knockout
+let Knockout = knockout
 
-var DistanceLegendViewModel = function (options) {
+let DistanceLegendViewModel = function (options) {
   if (!defined(options) || !defined(options.terria)) {
     throw new DeveloperError('options.terria is required.')
   }
@@ -33,11 +33,11 @@ var DistanceLegendViewModel = function (options) {
   //            }
   //        }, this);
 
-  var that = this
+  let that = this
 
   function addUpdateSubscription() {
     if (defined(that.terria)) {
-      var scene = that.terria.scene
+      let scene = that.terria.scene
       that._removeSubscription = scene.postRender.addEventListener(function () {
         updateDistanceLegendCesium(this, scene)
       }, that)
@@ -58,7 +58,7 @@ DistanceLegendViewModel.prototype.destroy = function () {
 }
 
 DistanceLegendViewModel.prototype.show = function (container) {
-  var testing
+  let testing
   if (this.enableDistanceLegend) {
     testing = '<div class="distance-legend" data-bind="visible: distanceLabel && barWidth">' +
       '<div class="distance-legend-label" data-bind="text: distanceLabel"></div>' +
@@ -76,14 +76,14 @@ DistanceLegendViewModel.prototype.show = function (container) {
 }
 
 DistanceLegendViewModel.create = function (options) {
-  var result = new DistanceLegendViewModel(options)
+  let result = new DistanceLegendViewModel(options)
   result.show(options.container)
   return result
 }
 
-var geodesic = new EllipsoidGeodesic()
+let geodesic = new EllipsoidGeodesic()
 
-var distances = [
+let distances = [
   1, 2, 3, 5,
   10, 20, 30, 50,
   100, 200, 300, 500,
@@ -99,7 +99,7 @@ function updateDistanceLegendCesium(viewModel, scene) {
     viewModel.distanceLabel = undefined
     return
   }
-  var now = getTimestamp()
+  let now = getTimestamp()
   if (now < viewModel._lastLegendUpdate + 250) {
     return
   }
@@ -107,15 +107,15 @@ function updateDistanceLegendCesium(viewModel, scene) {
   viewModel._lastLegendUpdate = now
 
   // Find the distance between two pixels at the bottom center of the screen.
-  var width = scene.canvas.clientWidth
-  var height = scene.canvas.clientHeight
+  let width = scene.canvas.clientWidth
+  let height = scene.canvas.clientHeight
 
-  var left = scene.camera.getPickRay(new Cartesian2((width / 2) | 0, height - 1))
-  var right = scene.camera.getPickRay(new Cartesian2(1 + (width / 2) | 0, height - 1))
+  let left = scene.camera.getPickRay(new Cartesian2((width / 2) | 0, height - 1))
+  let right = scene.camera.getPickRay(new Cartesian2(1 + (width / 2) | 0, height - 1))
 
-  var globe = scene.globe
-  var leftPosition = globe.pick(left, scene)
-  var rightPosition = globe.pick(right, scene)
+  let globe = scene.globe
+  let leftPosition = globe.pick(left, scene)
+  let rightPosition = globe.pick(right, scene)
 
   if (!defined(leftPosition) || !defined(rightPosition)) {
     viewModel.barWidth = undefined
@@ -123,23 +123,23 @@ function updateDistanceLegendCesium(viewModel, scene) {
     return
   }
 
-  var leftCartographic = globe.ellipsoid.cartesianToCartographic(leftPosition)
-  var rightCartographic = globe.ellipsoid.cartesianToCartographic(rightPosition)
+  let leftCartographic = globe.ellipsoid.cartesianToCartographic(leftPosition)
+  let rightCartographic = globe.ellipsoid.cartesianToCartographic(rightPosition)
 
   geodesic.setEndPoints(leftCartographic, rightCartographic)
-  var pixelDistance = geodesic.surfaceDistance
+  let pixelDistance = geodesic.surfaceDistance
 
   // Find the first distance that makes the scale bar less than 100 pixels.
-  var maxBarWidth = 100
-  var distance
-  for (var i = distances.length - 1; !defined(distance) && i >= 0; --i) {
+  let maxBarWidth = 100
+  let distance
+  for (let i = distances.length - 1; !defined(distance) && i >= 0; --i) {
     if (distances[i] / pixelDistance < maxBarWidth) {
       distance = distances[i]
     }
   }
 
   if (defined(distance)) {
-    var label
+    let label
     if (distance >= 1000) {
       label = (distance / 1000).toString() + ' km'
     } else {

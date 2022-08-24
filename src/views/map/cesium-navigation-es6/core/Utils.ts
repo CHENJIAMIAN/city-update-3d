@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 import { defined, Ray, Cartesian3, Cartographic, ReferenceFrame, SceneMode } from 'cesium'
 
-var Utils = {}
+let Utils = {}
 
-var unprojectedScratch = new Cartographic()
-var rayScratch = new Ray()
+let unprojectedScratch = new Cartographic()
+let rayScratch = new Ray()
 
 /**
  * gets the focus point of the camera
@@ -14,8 +14,8 @@ var rayScratch = new Ray()
  * @return {Cartesian3} The modified result parameter, a new instance if none was provided or undefined if there is no focus point.
  */
 Utils.getCameraFocus = function (terria, inWorldCoordinates, result) {
-  var scene = terria.scene
-  var camera = scene.camera
+  let scene = terria.scene
+  let camera = scene.camera
 
   if (scene.mode === SceneMode.MORPHING) {
     return undefined

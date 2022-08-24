@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="CesiumMapVue">
         <div
             id="cesium-container"
             v-loading="loading"
@@ -48,8 +48,15 @@
         googleStateliteUrl,
         arcgisStateliteUrl,
     } from '@/views/map/olmap-common';
-    import { map } from '@/views/map/index.vue';
+    // import { map } from '@/views/map/index.vue';
     import { defineComponent } from 'vue';
+    import { createCesium } from '@/views/map/components/cesium-earth';
+
+    declare module 'vue' {
+        interface ComponentCustomProperties {
+            viewer: Viewer;
+        }
+    }
 
     export let viewer: Viewer;
     export default defineComponent({
@@ -62,7 +69,6 @@
         },
         data() {
             return {
-                viewer: Object.freeze(viewer),
                 currentFWBH: '',
                 hightLightedPickedObject: null,
                 isMoveMentEventOff: false,
@@ -85,6 +91,7 @@
         },
         watch: {
             checkFanwei(n, o) {
+                const { viewer } = this;
                 const wallline = viewer?.entities?.values?.find(
                     (i) => i.name === '墙体上线'
                 );
@@ -114,6 +121,7 @@
             },
             isWallDisplay: {
                 handler(n, o) {
+                    const { viewer } = this;
                     if (!this.isZhongShanQuanyan) {
                         const wallline = viewer?.entities?.values?.find(
                             (i) => i.name === '墙体上线'
@@ -129,6 +137,7 @@
             },
             // 作为看板时
             showFlyCesiumMap(n) {
+                const { viewer } = this;
                 const panel = this.$refs.flyPathPanel;
                 if (n) {
                     const style = (viewer.homeButton.container as HTMLElement)
@@ -164,92 +173,17 @@
                     this.loaded3DTilesModelFlag = true;
                     // 显示时才加载模型,防止拖慢2d
                     // viewer不存在报错
-                    this.add3DTilesModel(viewer);
-                    this.loadNorthNavigator(viewer);
-                    this.addMeasureTool(viewer);
+                    // this.add3DTilesModel(viewer);
+                    // this.loadNorthNavigator(viewer);
+                    // this.addMeasureTool(viewer);
                 }
             },
         },
         mounted() {
-            console.log('CesiumMap mounted' /* this */);
-            window.Cesium = Cesium;
-            window.cesiummapVue = this;
-            const interval1 = setInterval((_) => {
-                if (!this.projectId) return;
-                clearInterval(interval1);
-                // 默认视图是中国m
-                Cesium.Camera.DEFAULT_VIEW_RECTANGLE =
-                    Cesium.Rectangle.fromDegrees(90, -20, 110, 90);
-                viewer =
-                    window.viewer =
-                    this.viewer =
-                        new Cesium.Viewer('cesium-container', {
-                            geocoder: false, // 地理位置查询定位控件
-                            navigationHelpButton: false, // 默认的相机控制提示控件
-                            fullscreenButton: false, // 全屏控件
-                            baseLayerPicker: false, // 底图切换控件
-                            imageryProvider: false, //不要默认的bingmap底图
-                            homeButton: true, // 默认相机位置控件
-                            animation: true, // 控制场景动画的播放速度控件
-                            timeline: true, // 时间滚动条控件
-                            scene3DOnly: true, // 每个几何实例仅以3D渲染以节省GPU内存
-                            targetFrameRate: 48, //调低帧率，可以提高性能
-                            // terrainProvider: Cesium.createWorldTerrain() // 注释时相当于使用默认地形，解开注释相当于使用全球地形
-                        });
-                viewer.homeButton._container.style.top = '3.9rem';
-                viewer.homeButton._container.style.right = '1.8rem';
-                // 加载天地图影像作为底图.21级别会没有影像,不好
-                viewer.imageryLayers.addImageryProvider(
-                    new Cesium.BingMapsImageryProvider({
-                        url: 'https://dev.virtualearth.net',
-                        key: 'Ao1Fg8MB0216CLM-94b8FtfhwjBIs3LpzBKmzSWHtks9zA3H-eHlKl49pNf6JEYt',
-                        mapStyle: Cesium.BingMapsStyle.AERIAL,
-                    })
-                    // new Cesium.UrlTemplateImageryProvider({
-                    //   url: `https://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=${"d93d0f40401619335e98468b99411aa1"}`,
-                    //   enablePickFeatures: false,
-                    //   maximumLevel: 20,
-                    //   subdomains: ["0", "1", "2", "3", "4", "5", "6", "7"],
-                    // })
-                );
-                viewer.imageryLayers.addImageryProvider(
-                    new Cesium.UrlTemplateImageryProvider({
-                        url: 'https://t{s}.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=9654e6de15fb2eb4aeb02a4191d9a712',
-                        subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-                    })
-                );
-
-                // Object.freeze(viewer) //会造成无法修改属性的错误
-                // viewer放store里会造成它是响应式的,从而造成内存溢出
-                (
-                    viewer.cesiumWidget.creditContainer as HTMLElement
-                ).style.display = 'none'; // 隐藏版权
-                (viewer.animation.container as HTMLElement).hidden = true;
-                (viewer.timeline.container as HTMLElement).hidden = true;
-                // viewer.resolutionScale = 0.9; //降低画布分辨率
-                // viewer.scene.debugShowFramesPerSecond = true;
-                viewer.scene.requestRenderMode = true; //启用requestRenderMode可减少Cesium渲染新帧的总时间并减少Cesium在应用程序中的总体CPU使用率。
-                viewer.scene.maximumRenderTimeChange = Infinity; //没用到时间相关的动画的话,就这样设置
-                viewer.scene.globe.depthTestAgainstTerrain = true;
-                viewer.scene.globe.baseColor = Cesium.Color.BLACK;
-                viewer.scene.skyAtmosphere.show = false;
-                viewer.scene.skyBox.show = false;
-
-                // 去掉cesium自带的entity的点击弹出对象属性pop的事件
-                viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-                    Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
-                );
-                viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
-                    Cesium.ScreenSpaceEventType.LEFT_CLICK
-                );
-
-                // 防止入地,设置后当相机高度达到设置的最大和最小高度时将不再放大和缩小
-                viewer.scene.screenSpaceCameraController.minimumZoomDistance = 20; //相机的高度的最小值
-                viewer.scene.screenSpaceCameraController.maximumZoomDistance = 20000000; //相机高度的最大值
-            });
+            viewer = this.viewer = createCesium();
         },
         methods: {
-            addMeasureTool(viewer) {
+            addMeasureTool(viewer: Viewer) {
                 const measureTool = new MeasureTools(viewer);
                 Sandcastle.addToolbarButton(
                     '画线',
@@ -286,7 +220,8 @@
                         measureTool.destroy();
                         const dom = document.getElementById('measure-toolbar');
                         if (dom) dom.style.display = 'none';
-                        this.$store.commit('map/CHANGE_MAP_STATE', {
+                        const $store = useMapStore();
+                        $store.CHANGE_MAP_STATE({
                             key: 'isShow3DMeasure',
                             value: false,
                         });
@@ -294,7 +229,7 @@
                     'measure-toolbar'
                 );
             },
-            add3DTilesModel(viewer) {
+            add3DTilesModel(viewer: Viewer) {
                 this.loading = true;
                 // getPhotoGraphicFileUrlByProjectId({
                 //     projectId: this.projectId,
@@ -342,7 +277,7 @@
                         })
                 ));
 
-                this.$on('hook:destroyed', (_) => {
+                this.$on('hook:destroyed', () => {
                     console.log(`this.$on("hook:destroyed", _ => { 销毁viewer`);
                     if (viewer) {
                         // 内存并没有减少,奇怪(被vue劫持了)
@@ -454,7 +389,7 @@
                                 this.adjustTileSet(theTileset, {
                                     height: -5,
                                 }); //第二个参数depthTestAgainstTerrain为true后需要设置一下高度
-                            // var lnglat = this.cartographicToLnglat(
+                            // let lnglat = this.cartographicToLnglat(
                             //   Cesium.Cartographic.z fromCartesian(theTileset.boundingSphere.center)
                             // );
                             // console.log("校正后的3dtiles模型坐标", lnglat);
@@ -485,7 +420,8 @@
                                     const isZhongShanQuanyan =
                                         a.includes('quanyan');
                                     // 中山泉眼项目特有
-                                    this.$store.commit('map/CHANGE_MAP_STATE', {
+                                    const $store = useMapStore();
+                                    $store.CHANGE_MAP_STATE({
                                         key: 'isZhongShanQuanyan',
                                         value: isZhongShanQuanyan,
                                     });
@@ -685,8 +621,8 @@
                 // });
             },
             add3DTilesClassifyModel(viewer: Viewer, dantiTilesetUrlPath) {
-                var classifcationTilesetUrl = `/gis/${dantiTilesetUrlPath}/danti/tileset.json`;
-                var classificationTileset = (this.classificationTileset =
+                let classifcationTilesetUrl = `/gis/${dantiTilesetUrlPath}/danti/tileset.json`;
+                let classificationTileset = (this.classificationTileset =
                     new Cesium.Cesium3DTileset({
                         url: classifcationTilesetUrl,
                         // classificationType: Cesium.ClassificationType.CESIUM_3D_TILE
@@ -699,11 +635,11 @@
                 });
                 viewer.scene.primitives.add(classificationTileset);
 
-                var scene = viewer.scene;
+                let scene = viewer.scene;
 
                 viewer.screenSpaceEventHandler.setInputAction((movement) => {
                     viewer._container.style.cursor = 'default';
-                    var pickedObject = scene.pick(movement.endPosition);
+                    let pickedObject = scene.pick(movement.endPosition);
 
                     if (this.isMoveMentEventOff) return;
 
@@ -749,10 +685,10 @@
 
                 this.hightLightClickedBuildingListener = (evt) => {
                     // 打印点击坐标
-                    // var cartesian = scene.pickPosition(evt.position);
-                    // var lnglat = this.cartesianToLnglat(cartesian, true);
+                    // let cartesian = scene.pickPosition(evt.position);
+                    // let lnglat = this.cartesianToLnglat(cartesian, true);
                     // console.log("点击了坐标", lnglat);
-                    var pickedObject = scene.pick(evt.position);
+                    let pickedObject = scene.pick(evt.position);
                     this.highLightObj(pickedObject);
                 };
 
@@ -769,7 +705,7 @@
                                 fea.getProperties().fwbh ||
                                 fea.getProperties()['测绘编号'];
                             const extent = fea.getGeometry().getExtent();
-                            var center = getCenter(extent); //获取边界区域的中心位置
+                            let center = getCenter(extent); //获取边界区域的中心位置
                             const coord = transform(
                                 center,
                                 'EPSG:3857',
@@ -812,7 +748,7 @@
                 );
             },
             getFWBH(pickedObject) {
-                var fwbhName = pickedObject
+                let fwbhName = pickedObject
                     .getPropertyNames()
                     .find(
                         (i) => i === '测绘编号' || i === 'fwbh' || i === 'FWBH'
@@ -821,7 +757,7 @@
                 return fwbh;
             },
             unHightLightedLastPickedObject() {
-                var scene = viewer.scene;
+                let scene = viewer.scene;
                 const defaultColor = Cesium.Color.RED.withAlpha(0.05);
                 if (this.hightLightedPickedObject)
                     this.hightLightedPickedObject.color = defaultColor;
@@ -830,7 +766,7 @@
                 this.hightLightedPickedObject = null;
             },
             hightLightedCurrentPickedObject(pickedObject, fwbh) {
-                var scene = viewer.scene;
+                let scene = viewer.scene;
                 pickedObject.color = Cesium.Color.BLUE.withAlpha(0.5);
                 scene.requestRender();
                 this.currentFWBH = fwbh;
@@ -896,7 +832,7 @@
                                     // console.count();
                                     // 飞过去的动画完成太快, 可能tile.content._features只加载了几个
                                     if (!canHighLightObj) {
-                                        var content = tile.content;
+                                        let content = tile.content;
                                         const tileSetFea =
                                             content._features.find(
                                                 (i) =>
@@ -923,9 +859,9 @@
                     debugger;
                 }
             },
-            loadNorthNavigator(viewer) {
+            loadNorthNavigator(viewer: Viewer) {
                 /*罗盘---------------------------------------------------------------------------------------*/
-                var options = {};
+                let options = {};
                 // 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和 Cesium.Rectangle.
                 options.defaultResetView = Cesium.Rectangle.fromDegrees(
                     80,
@@ -948,17 +884,17 @@
                 const cartographic = Cesium.Cartographic.fromCartesian(
                     tileset.boundingSphere.center
                 ); //获得原始中心
-                var surface = Cesium.Cartesian3.fromRadians(
+                let surface = Cesium.Cartesian3.fromRadians(
                     cartographic.longitude,
                     cartographic.latitude,
                     0.0
                 );
-                var offset = Cesium.Cartesian3.fromRadians(
+                let offset = Cesium.Cartesian3.fromRadians(
                     cartographic.longitude + xAxias,
                     cartographic.latitude + yAxias,
                     -height || -cartographic.height
                 ); //减去高度
-                var translation = Cesium.Cartesian3.subtract(
+                let translation = Cesium.Cartesian3.subtract(
                     offset,
                     surface,
                     new Cesium.Cartesian3()
@@ -989,25 +925,25 @@
                 }
             ) {
                 //旋转
-                var mx = Cesium.Matrix3.fromRotationX(
+                let mx = Cesium.Matrix3.fromRotationX(
                     Cesium.Math.toRadians(params.rx)
                 );
-                var my = Cesium.Matrix3.fromRotationY(
+                let my = Cesium.Matrix3.fromRotationY(
                     Cesium.Math.toRadians(params.ry)
                 );
-                var mz = Cesium.Matrix3.fromRotationZ(
+                let mz = Cesium.Matrix3.fromRotationZ(
                     Cesium.Math.toRadians(params.rz)
                 );
-                var rotationX = Cesium.Matrix4.fromRotationTranslation(mx);
-                var rotationY = Cesium.Matrix4.fromRotationTranslation(my);
-                var rotationZ = Cesium.Matrix4.fromRotationTranslation(mz);
+                let rotationX = Cesium.Matrix4.fromRotationTranslation(mx);
+                let rotationY = Cesium.Matrix4.fromRotationTranslation(my);
+                let rotationZ = Cesium.Matrix4.fromRotationTranslation(mz);
                 //平移
-                var position = Cesium.Cartesian3.fromDegrees(
+                let position = Cesium.Cartesian3.fromDegrees(
                     params.tx,
                     params.ty,
                     params.tz
                 );
-                var m = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+                let m = Cesium.Transforms.eastNorthUpToFixedFrame(position);
                 //旋转、平移矩阵相乘
                 Cesium.Matrix4.multiply(m, rotationX, m);
                 Cesium.Matrix4.multiply(m, rotationY, m);
@@ -1015,7 +951,7 @@
                 //赋值给tileset
                 tileset._root.transform = m;
                 //缩放
-                var scale = (params.scale || 1) * 1;
+                let scale = (params.scale || 1) * 1;
                 tileset._root.customTransform = {
                     matrix: {
                         origin: tileset._root.transform.clone(),
@@ -1023,12 +959,12 @@
                         translation: Cesium.Matrix4.IDENTITY,
                     },
                 };
-                var m1 = Cesium.Matrix4.fromScale(
+                let m1 = Cesium.Matrix4.fromScale(
                     new Cesium.Cartesian3(scale, scale, scale)
                 );
                 tileset._root.customTransform.matrix.scale = m1;
                 tileset._root.customTransform.scale = scale;
-                var m2 = new Cesium.Matrix4();
+                let m2 = new Cesium.Matrix4();
                 Cesium.Matrix4.multiply(
                     tileset._root.customTransform.matrix.origin,
                     tileset._root.customTransform.matrix.rotation,
@@ -1050,12 +986,12 @@
                 // isToWgs84 true 返回wgs84坐标  ,false返回弧度
                 const viewer = this.viewer;
                 if (!cartesian) return;
-                var ellipsoid = viewer.scene.globe.ellipsoid;
-                var lnglat = ellipsoid.cartesianToCartographic(cartesian);
+                let ellipsoid = viewer.scene.globe.ellipsoid;
+                let lnglat = ellipsoid.cartesianToCartographic(cartesian);
                 if (isToWgs84) {
-                    var lat = Cesium.Math.toDegrees(lnglat.latitude);
-                    var lng = Cesium.Math.toDegrees(lnglat.longitude);
-                    var hei = lnglat.height;
+                    let lat = Cesium.Math.toDegrees(lnglat.latitude);
+                    let lng = Cesium.Math.toDegrees(lnglat.longitude);
+                    let hei = lnglat.height;
                     return [lng, lat, hei];
                 } else {
                     return [lnglat.longitude, lnglat.latitude, lnglat.height];
@@ -1065,9 +1001,9 @@
                 // 弧度转经纬度
                 const viewer = this.viewer;
                 if (!cartographic) return;
-                var lat = Cesium.Math.toDegrees(cartographic.latitude);
-                var lng = Cesium.Math.toDegrees(cartographic.longitude);
-                var hei = cartographic.height;
+                let lat = Cesium.Math.toDegrees(cartographic.latitude);
+                let lng = Cesium.Math.toDegrees(cartographic.longitude);
+                let hei = cartographic.height;
                 return [lng, lat, hei];
             },
         },
@@ -1075,7 +1011,7 @@
 </script>
 <style lang="scss" scoped>
     #cesium-container {
-        height: 100%;
+        height: 100vh;
         position: absolute;
         width: 100%;
     }

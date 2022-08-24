@@ -54,6 +54,7 @@
     import { map } from '@/views/map/index.vue';
 
     import { defineComponent } from 'vue';
+    import { useMapStore } from '@/stores';
     export default defineComponent({
         name: 'MeasurePanel',
         data() {
@@ -152,7 +153,9 @@
                         //     measureNums:[],
                         //     geojson:"",
                         // }
-                        this.$store.commit('map/CHANGE_MAP_STATE', {
+
+                        const $store = useMapStore();
+                        $store.CHANGE_MAP_STATE({
                             key: 'drawingPolygon',
                             value: false,
                         });
@@ -165,7 +168,8 @@
                 this.$refs[formName].resetFields();
             },
             onCancel() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'drawingPolygon',
                     value: false,
                 });

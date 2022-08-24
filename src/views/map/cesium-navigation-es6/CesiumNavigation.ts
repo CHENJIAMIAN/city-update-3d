@@ -5,8 +5,8 @@ import DistanceLegendViewModel from './viewModels/DistanceLegendViewModel'
 import NavigationViewModel from './viewModels/NavigationViewModel'
 
 
-var CesiumEvent = Event
-var Knockout = knockout
+let CesiumEvent = Event
+let Knockout = knockout
 
 /**
  * @alias CesiumNavigation
@@ -14,7 +14,7 @@ var Knockout = knockout
  *
  * @param {Viewer|CesiumWidget} viewerCesiumWidget The Viewer or CesiumWidget instance
  */
-var CesiumNavigation = function (viewerCesiumWidget) {
+let CesiumNavigation = function (viewerCesiumWidget) {
   initialize.apply(this, arguments)
 
   this._onDestroyListeners = []
@@ -61,7 +61,7 @@ CesiumNavigation.prototype.destroy = function () {
   }
   delete this.container
 
-  for (var i = 0; i < this._onDestroyListeners.length; i++) {
+  for (let i = 0; i < this._onDestroyListeners.length; i++) {
     this._onDestroyListeners[i]()
   }
 }
@@ -83,9 +83,9 @@ function initialize(viewerCesiumWidget, options) {
 
   //        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-  var cesiumWidget = defined(viewerCesiumWidget.cesiumWidget) ? viewerCesiumWidget.cesiumWidget : viewerCesiumWidget
+  let cesiumWidget = defined(viewerCesiumWidget.cesiumWidget) ? viewerCesiumWidget.cesiumWidget : viewerCesiumWidget
 
-  var container = document.createElement('div')
+  let container = document.createElement('div')
   container.className = 'cesium-widget-cesiumNavigationContainer'
   cesiumWidget.container.appendChild(container)
 

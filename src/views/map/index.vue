@@ -114,7 +114,6 @@
             <!-- cesium 3D 冒出点击了哪个建筑物 -->
             <CesiumMap
                 ref="cesiumMap"
-                v-if="levelType === 'project' && showCesiumMap"
                 v-show="is3D"
                 :showFlyCesiumMap="showFlyCesiumMap"
                 @clickBuildingOnCesiumMap="handleClickBuildingOnCesiumMap"
@@ -248,7 +247,6 @@
     import { useMapStore } from '@/stores';
     import 'ol/ol.css';
 
-    import Map from '@/views/map/enhance-olmap';
     // import Map from 'ol/Map';
     import View from 'ol/View';
     import { platformModifierKeyOnly, click } from 'ol/events/condition';
@@ -283,19 +281,10 @@
     import { getCenter, containsExtent } from 'ol/extent';
     import { DragBox, Select } from 'ol/interaction';
     import Overlay from 'ol/Overlay';
-    import {
-        defaults as defaultControls, // 比例尺
-    } from 'ol/control';
 
     import ResizeObserver from 'resize-observer-polyfill';
 
-    import {
-        tdtVec,
-        tdtVecNotation,
-        tdtSatelite,
-        tdtSateliteNotation,
-        getFWSelectedStyleFunc,
-    } from '@/views/map/olmap-common';
+    import { getFWSelectedStyleFunc } from '@/views/map/olmap-common';
     import { defaultBaseLayers } from '@/views/map/olmap-config';
     import { provinceAndCityData, CodeToText } from 'element-china-area-data';
     import {
@@ -322,10 +311,12 @@
 
     import { defineComponent } from 'vue';
     import type BaseEvent from 'ol/events/Event';
+    import Map, { createMap } from '@/views/map/enhance-olmap';
 
     // 此处this为undefined
     // 不要放store里，不要被vue劫持，否则性能堪忧
-    export let map: Map | null;
+
+    export let map: Map | undefined;
 
     export default defineComponent({
         props: {
@@ -362,13 +353,7 @@
         },
         data() {
             this.zoomThatCanSelect = 17.465768204547796;
-            this.chinaView = new View({
-                center: fromLonLat([
-                    104.11137264774226, 34.584094621462896,
-                ]) /* 中国中心*/,
-                zoom: 5,
-            });
-            this.map = map;
+
             let projectFeasProps: any[] = [];
             let multiSelectedProps: any[] = [];
             let searchOptions: any[] = [];
@@ -388,7 +373,6 @@
                 searchNoDataText: '',
                 //
                 isDisburseBudgetCollapse: false,
-                showCesiumMap: true,
                 showFlyCesiumMap: false,
                 showMapType: true,
                 disburseBudgetDrawerList: {
@@ -424,7 +408,6 @@
                     // levelType:"city",//"country" //"project"
                     if (
                         this.$route.path.includes('/mappage') ||
-                        this.$route.path.includes('building/approval') ||
                         this.$route.path.includes('/kanban')
                     ) {
                         return 'project';
@@ -435,6 +418,8 @@
             },
         },
         async mounted() {
+            console.log('map/index mounted');
+
             window.mapvue = this;
             this.maptype;
             // 轮询直到获取到项目id,才去请求接口,很多接口需要要那个到项目id
@@ -442,37 +427,7 @@
                 // 找到项目id时才初始化地图，防止获取不到图层
                 clearInterval(interval1);
 
-                const mapElementId = 'olmap';
-                const mapElement = document.querySelector('#' + mapElementId);
-                tdtVec.setVisible(false);
-                tdtVecNotation.setVisible(false);
-                // 多个组件引用同一个vue组件，这个组件又引用同一个tdtSatelite，始终会造成状态不一致问题
-                tdtSatelite.setVisible(true);
-                tdtSateliteNotation.setVisible(true);
-                console.log('实例化map,给map赋值');
-                map =
-                    this.map =
-                    window.olmap =
-                        new Map({
-                            controls: defaultControls({
-                                attribution: false,
-                                zoom: !this.asKanban,
-                            }),
-                            layers: [
-                                tdtSatelite,
-                                tdtVec,
-                                tdtVecNotation,
-                                tdtSateliteNotation /* googleMapLayer */,
-                            ],
-                            view: this.chinaView,
-                            target: mapElementId,
-                        });
-                // 为什么缩放或单击地图时不正确/不正确？ https://openlayers.org/en/latest/doc/faq.html
-                const sizeObserver = new ResizeObserver(() => {
-                    console.log('ResizeObserver updateSize');
-                    map && map.updateSize();
-                });
-                mapElement && sizeObserver.observe(mapElement);
+                map = this.map = window.olmap = createMap();
 
                 // levelType根据路由去判断属于项目预览还是首页地图
                 if (this.levelType === 'project') {
@@ -499,8 +454,8 @@
                     );
                     // const text = await response.text();
                     const text = wmtsGetCapabilities;
-                    var parser = new WMTSCapabilities();
-                    var capabilitiesResult = parser.read(text);
+                    let parser = new WMTSCapabilities();
+                    let capabilitiesResult = parser.read(text);
 
                     // 添加图层
                     layers.forEach((layer) => {
@@ -541,7 +496,7 @@
                                 layername.includes('jitang_tuguidiejiadixingtu')
                             ) {
                                 // 处理数据大的cad图
-                                var tiled = new TileLayer({
+                                let tiled = new TileLayer({
                                     name: layername,
                                     visible: false,
                                     zIndex: zindex,
@@ -606,7 +561,7 @@
                             if (layername.includes('_yx')) {
                                 map && lockViewByExtent(extent2, map);
                             }
-                            var options = optionsFromCapabilities(
+                            let options = optionsFromCapabilities(
                                 capabilitiesResult,
                                 {
                                     layer: `${namespace}:${layername}`,
@@ -720,8 +675,8 @@
                 // 大于某个级别才可以选择要素, 为map添加鼠标移动事件监听，当指向标注时改变鼠标光标状态
                 map.on('pointermove', (evt) => {
                     if (!map) return;
-                    var pixel = map?.getEventPixel(evt.originalEvent);
-                    var hit = map?.hasFeatureAtPixel(pixel);
+                    let pixel = map?.getEventPixel(evt.originalEvent);
+                    let hit = map?.hasFeatureAtPixel(pixel);
                     const zoom = map?.getView()?.getZoom();
                     if (zoom && zoom > this.zoomThatCanSelect) {
                         map.getTargetElement().style.cursor = hit
@@ -733,7 +688,7 @@
                 });
                 // 点击时弹出信息,或跳转到视图
                 map.on('click', (evt) => {
-                    var fea = map?.forEachFeatureAtPixel(
+                    let fea = map?.forEachFeatureAtPixel(
                         evt.pixel,
                         (feature, layer) => {
                             if (!layer) return;
@@ -770,7 +725,11 @@
                 });
             }, 1000);
         },
+        updated() {
+            console.log('map/index updated');
+        },
         destroyed() {
+            console.log('map/index destroyed');
             map?.getLayers().forEach((i) => {
                 map?.removeLayer(i);
             });
@@ -867,7 +826,7 @@
             // 框选, 点选
             addSelectBuildingInteraction(layers: VectorImage<VectorSource>[]) {
                 // 添加建筑物的点击高亮
-                var selectSingleClick = new Select({
+                let selectSingleClick = new Select({
                     condition: (mapBrowserEvent) => {
                         const zoom = map?.getView()?.getZoom();
                         // 放大到一定范围才可以选择房屋
@@ -887,21 +846,21 @@
                     }
                 });
                 selectSingleClick.set('name', 'highlightSelect');
-                var selectedFeatures: Collection<Feature<Geometry>> =
+                let selectedFeatures: Collection<Feature<Geometry>> =
                     selectSingleClick.getFeatures();
 
                 //一个DragBox交互，用于通过绘图框选择要素
-                var dragBox = new DragBox({
+                let dragBox = new DragBox({
                     condition: platformModifierKeyOnly,
                 });
                 this.map.addInteraction(dragBox);
                 dragBox.on('boxend', () => {
-                    var rotation = this.map.getView().getRotation();
-                    var oblique = rotation % (Math.PI / 2) !== 0;
-                    var candidateFeatures:
+                    let rotation = this.map.getView().getRotation();
+                    let oblique = rotation % (Math.PI / 2) !== 0;
+                    let candidateFeatures:
                         | Collection<Feature<Geometry>>
                         | any[] = oblique ? [] : selectedFeatures;
-                    var extent = dragBox.getGeometry().getExtent();
+                    let extent = dragBox.getGeometry().getExtent();
                     this.buildingLayers?.forEach((i) => {
                         const vectorSource = i.getSource();
                         vectorSource?.forEachFeatureIntersectingExtent(
@@ -958,12 +917,12 @@
                     //倾斜旋转视图时，框范围将超出其几何形状，因此框和候选要素几何围绕公共锚旋转
                     //确认这一点，并且框的几何形状与其对齐范围，几何相交
                     if (oblique) {
-                        var anchor = [0, 0];
-                        var geometry = dragBox.getGeometry().clone();
+                        let anchor = [0, 0];
+                        let geometry = dragBox.getGeometry().clone();
                         geometry.rotate(-rotation, anchor);
-                        var extent$1 = geometry.getExtent();
+                        let extent$1 = geometry.getExtent();
                         candidateFeatures.forEach((feature) => {
-                            var geometry = feature?.getGeometry()?.clone();
+                            let geometry = feature?.getGeometry()?.clone();
                             geometry?.rotate(-rotation, anchor);
                             if (geometry?.intersectsExtent(extent$1)) {
                                 selectedFeatures.push(feature);
@@ -981,7 +940,7 @@
                 });
 
                 selectedFeatures.on(['add', 'remove'], () => {
-                    var feas = selectedFeatures.getArray();
+                    let feas = selectedFeatures.getArray();
                     if (feas.length > 0) {
                         // this.multiSelectedProps = props;
                     } else {
@@ -1003,9 +962,6 @@
                     // if (this.isUnLockViewByExtent) return;
                     this.is3D = true;
                     this.showFlyCesiumMap = false;
-                    // // 让组件重载,会造成多个容器混乱,原因未知
-                    // this.showCesiumMap = false;
-                    // this.$nextTick(() => (this.showCesiumMap = true));
                 } else if (maptype == '飞行漫游') {
                     this.is3D = true;
                     this.showFlyCesiumMap = true;

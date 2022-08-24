@@ -1,5 +1,5 @@
 <template>
-    <div class="tool-box">
+    <div class="tool-box flex absolute z-1 bg-white right-5 top-5 shadow-lg">
         <div class="dropdown-button" @click="handleAnnotationsClick">
             <img
                 width="16"
@@ -280,6 +280,7 @@
 
     // import type { Notification as ElNotification } from 'element-ui';
     import { defineComponent } from 'vue';
+    import type { Geometry } from 'ol/geom';
 
     export default defineComponent({
         components: {},
@@ -469,7 +470,7 @@
         methods: {
             // 添加到服务器端
             addWfs(feature: Feature, measureNum: string) {
-                var WFSTSerializer = new WFS();
+                let WFSTSerializer = new WFS();
                 const layername = (this.$parent as any)?.buildingLayers
                     .find((i) => i.get('name').includes('_fw'))
                     .get('name');
@@ -477,20 +478,22 @@
                     debugger;
                     return;
                 }
-                var featObject = WFSTSerializer.writeTransaction(
+                let featObject = WFSTSerializer.writeTransaction(
                     [feature],
-                    null,
-                    null,
+                    [],
+                    [],
                     {
                         featureType: layername,
                         featureNS: (this.$parent as any)?.namespace,
                         // srsName: "http://www.opengis.net/def/crs/epsg/0/3857",//urn:ogc:def:crs:EPSG::4326
                         srsName: 'EPSG:3857', //
+                        featurePrefix: '',
+                        nativeElements: [],
                     }
                 );
-                var serializer = new XMLSerializer();
-                var featString = serializer.serializeToString(featObject);
-                var xhr = new XMLHttpRequest();
+                let serializer = new XMLSerializer();
+                let featString = serializer.serializeToString(featObject);
+                let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/geoserver/wfs?service=wfs');
                 xhr.setRequestHeader('Content-Type', 'text/xml');
                 xhr.send(featString);
@@ -535,25 +538,27 @@
             deleteWfs(feature: Feature) {
                 const { $parent } = this;
                 if (!$parent) return;
-                var WFSTSerializer = new WFS();
-                const layername = $parent.buildingLayers
+                let WFSTSerializer = new WFS();
+                const layername = ($parent as any).buildingLayers
                     .find((i) => i.get('name').includes('_fw'))
                     .get('name');
-                if (!layername || !$parent.namespace) return;
-                var featObject = WFSTSerializer.writeTransaction(
-                    null,
-                    null,
+                if (!layername || !($parent as any).namespace) return;
+                let featObject = WFSTSerializer.writeTransaction(
+                    [],
+                    [],
                     [feature],
                     {
                         featureType: layername,
-                        featureNS: $parent.namespace,
+                        featureNS: ($parent as any).namespace,
                         // srsName: "http://www.opengis.net/def/crs/epsg/0/3857",//urn:ogc:def:crs:EPSG::4326
                         srsName: 'EPSG:3857', //
+                        featurePrefix: '',
+                        nativeElements: [],
                     }
                 );
-                var serializer = new XMLSerializer();
-                var featString = serializer.serializeToString(featObject);
-                var xhr = new XMLHttpRequest();
+                let serializer = new XMLSerializer();
+                let featString = serializer.serializeToString(featObject);
+                let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/geoserver/wfs?service=wfs');
                 xhr.setRequestHeader('Content-Type', 'text/xml');
                 xhr.send(featString);
@@ -578,9 +583,9 @@
                 );
             },
             handleAddBuildingClick() {
-                var drawedFeature = null;
+                let drawedFeature: Feature<Geometry>;
                 // 创建用于新绘制feature的layer
-                var drawLayer = new VectorLayer({
+                let drawLayer = new VectorLayer({
                     source: new VectorSource(),
                     style: new Style({
                         stroke: new Stroke({
@@ -590,33 +595,34 @@
                     }),
                 });
                 // 添加绘制新图形的interaction，用于添加新的线条
-                var drawInteraction = new Draw({
+                const source = drawLayer.getSource();
+                if (!source) return;
+                let drawInteraction = new Draw({
                     condition: primaryAction,
-                    type: 'MULTI_POLYGON', // 设定为线条
-                    source: drawLayer.getSource(),
+                    type: 'MultiPolygon', // 设定为线条
+                    source,
                 });
 
                 // 3秒后，自动刷新页面上的feature
                 const clearDrawed = () => {
-                    drawLayer.getSource().clear();
-                    const layers = map.getLayersByProperty('flag', 'building');
-                    layers.forEach((layer) => layer.getSource().refresh());
+                    drawLayer?.getSource()?.clear();
+                    const layers = map?.getLayersByProperty('flag', 'building');
+                    layers?.forEach((layer) => layer?.getSource()?.refresh());
                     if (drawedFeature) {
-                        drawLayer.getSource().clear();
+                        drawLayer?.getSource()?.clear();
                     }
-                    drawedFeature = null;
                 };
+                if (!map) return;
 
                 map.getViewport().oncontextmenu = (e) => {
                     drawInteraction.finishDrawing();
                 };
                 const cancelAddingBuilding = () => {
                     // 取消勾选新增复选框时，移出绘制的Interaction，删除已经绘制的feature
-                    map.removeInteraction(drawInteraction);
+                    map?.removeInteraction(drawInteraction);
                     if (drawedFeature) {
-                        drawLayer.getSource().clear();
+                        drawLayer?.getSource()?.clear();
                     }
-                    drawedFeature = null;
                     this.addingBuilding = false;
                     this.notify2?.close();
                     this.notify2 = null;
@@ -657,16 +663,12 @@
 
                         // 保存新绘制的feature
                         // 转换坐标
-                        var geometry = drawedFeature?.getGeometry()?.clone();
+                        let geometry = drawedFeature?.getGeometry()?.clone();
                         // 设置feature对应的属性，这些属性是根据数据源的字段来设置的
-                        var newFeature = new Feature();
+                        let newFeature = new Feature();
                         newFeature.setGeometryName('geom');
                         const measureNum = prompt('请输入测绘编号');
-                        if (measureNum)
-                            const fea = getBuildingFeaByMeasureNum(
-                                measureNum,
-                                map
-                            );
+                        const fea = getBuildingFeaByMeasureNum(measureNum, map);
                         if (!measureNum || fea) {
                             if (fea)
                                 this.$message.error(
@@ -694,22 +696,29 @@
                 }
             },
             handleCompareMapClick() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'showCompareMap',
                     value: true,
                 });
             },
             handleDrawLayerClick() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'drawingPolygon',
                     value: true,
                 });
             },
             handle2DMeasureClick() {
-                this.$store.dispatch('map/toggleMeasure', true);
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
+                    key: 'measuring',
+                    value: true,
+                });
             },
             handle3DFlyPathClick() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'showFlyPathPanel',
                     value: !this.showFlyPathPanel,
                 });
@@ -718,36 +727,41 @@
                 if ((this.$parent as any)?.is3D) {
                     const measureNumAnnotations = viewer.measureNumAnnotations;
                     // Toggle the show property of every label in the collection
-                    var len = measureNumAnnotations.length;
-                    for (var i = 0; i < len; ++i) {
-                        var l = measureNumAnnotations.get(i);
+                    let len = measureNumAnnotations.length;
+                    for (let i = 0; i < len; ++i) {
+                        let l = measureNumAnnotations.get(i);
                         l.show = !l.show;
                     }
                     viewer.scene.requestRender();
                 } else {
-                    const layers = map.getLayersByProperty('flag', 'building');
+                    const layers = map?.getLayersByProperty('flag', 'building');
                     this.fwbzFlag = !this.fwbzFlag;
-                    layers.forEach((layer) =>
+                    layers?.forEach((layer) =>
                         layer.setStyle((fea) => {
                             if (this.fwbzFlag) {
-                                return getFWStyleFunc(fea);
+                                return getFWStyleFunc(fea as Feature<Geometry>);
                             } else {
-                                return getNoneTextFWStyleFunc(fea);
+                                return getNoneTextFWStyleFunc(
+                                    fea as Feature<Geometry>
+                                );
                             }
                         })
                     );
                 }
             },
             handleWallDisplayClick() {
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'isWallDisplay',
                     value: !this.isWallDisplay,
                 });
             },
             handle3DMeasureClick() {
-                document.getElementById('measure-toolbar').style.display =
-                    'block';
-                this.$store.commit('map/CHANGE_MAP_STATE', {
+                (
+                    document.getElementById('measure-toolbar') as HTMLElement
+                ).style.display = 'block';
+                const $store = useMapStore();
+                $store.CHANGE_MAP_STATE({
                     key: 'isShow3DMeasure',
                     value: true,
                 });
@@ -761,13 +775,6 @@
 </script>
 <style lang="scss" scoped>
     .tool-box {
-        position: absolute;
-        z-index: 1;
-        right: 20px;
-        top: 20px;
-        display: flex;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
         .dropdown-button {
             display: flex;
             align-items: center;

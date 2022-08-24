@@ -1,6 +1,6 @@
 type Option = { text: string; onselect: () => void; value?: string }[];
 
-var defaultAction: () => void;
+let defaultAction: () => void;
 // 官网sandcastle-header.js 魔改而来,用来方便地添加调试按钮,菜单
 export default {
     // 添加一个checkbox
@@ -10,15 +10,15 @@ export default {
         onchange: (isChecked: boolean) => void,
         toolbarID: string
     ) {
-        var input = document.createElement('input');
+        let input = document.createElement('input');
         input.checked = checked;
         input.type = 'checkbox';
         input.style.pointerEvents = 'none';
-        var label = document.createElement('label');
+        let label = document.createElement('label');
         label.appendChild(input);
         label.appendChild(document.createTextNode(text));
         label.style.pointerEvents = 'none';
-        var button = document.createElement('button');
+        let button = document.createElement('button');
         button.type = 'button';
         button.className = 'cesium-button';
         button.appendChild(label);
@@ -36,7 +36,7 @@ export default {
         onclick: () => void,
         toolbarID: string
     ) {
-        var button = document.createElement('button');
+        let button = document.createElement('button');
         button.type = 'button';
         button.className = 'cesium-button';
         button.onclick = function () {
@@ -80,10 +80,10 @@ export default {
 ]);
    */
     addToolbarMenu: function (options: Option, toolbarID: string) {
-        var menu = document.createElement('select');
+        let menu = document.createElement('select');
         menu.className = 'cesium-button';
         menu.onchange = function () {
-            var item = options[menu.selectedIndex];
+            let item = options[menu.selectedIndex];
             if (item && typeof item.onselect === 'function') {
                 item.onselect();
             }
@@ -94,8 +94,8 @@ export default {
             defaultAction = options[0].onselect;
         }
 
-        for (var i = 0, len = options.length; i < len; ++i) {
-            var option = document.createElement('option');
+        for (let i = 0, len = options.length; i < len; ++i) {
+            let option = document.createElement('option');
             option.textContent = options[i].text;
             option.value = options[i].value || '';
             menu.appendChild(option);

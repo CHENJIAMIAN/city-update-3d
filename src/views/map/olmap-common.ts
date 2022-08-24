@@ -83,7 +83,7 @@ const googleMapLayer = new TileLayer({
 
 /*样式---------------------------------------------------------------------------------------*/
 export const fill = new Fill({
-    color: '#d5e3001f',
+    color: 'yellow',
 });
 export const stroke = new Stroke({
     color: 'transparent',
@@ -95,16 +95,16 @@ export const defaultPolygonStyle = new Style({
     stroke: stroke,
 });
 
-var blue = [0, 153, 255, 1]; //ol自带的外框高亮蓝
-var width = 3;
+let blue = 'rgba(0, 153, 255, 1)'; //ol自带的外框高亮蓝
+let width = 3;
 // 外圈高亮蓝,中间透明
 export const defaultSelectedPolygonStyle = [
     new Style({
         fill: new Fill({
-            color: [0, 0, 255, 0.5],
+            color: 'rgba(0, 0, 255, 0.5)',
         }),
         stroke: new Stroke({
-            color: [0, 0, 255, 0.5],
+            color: 'rgba(0, 0, 255, 0.5)',
             width: 1,
         }),
     }),
@@ -115,10 +115,10 @@ export const getFWSelectedStyleFunc = (fea: Feature) => {
     const fwbh = props.fwbh || props['测绘编号'];
     return new Style({
         fill: new Fill({
-            color: [0, 0, 255, 0.5],
+            color: 'rgba(0, 0, 255, 0.5)',
         }),
         stroke: new Stroke({
-            color: [0, 0, 255, 0.5],
+            color: 'rgba(0, 0, 255, 0.5)',
             width: 1,
         }),
         text: new Text({
@@ -141,7 +141,7 @@ export const getFWStyleFunc = (fea: Feature) => {
             textAlign: 'left',
             text: fwbh,
             fill: new Fill({
-                color: 'white',
+                color: 'black',
             }),
         }),
     });
@@ -159,7 +159,7 @@ export const getNoneTextFWStyleFunc = (fea: Feature) => {
 export const redSelectedPolygonStyle = [
     new Style({
         fill: new Fill({
-            color: [255, 255, 255, 0],
+            color: 'rgba(255, 255, 255, 0)',
         }),
         stroke: new Stroke({
             color: 'red',

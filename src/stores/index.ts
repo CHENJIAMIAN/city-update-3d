@@ -16,8 +16,9 @@ export const useCounterStore = defineStore({
 });
 
 export const useMapStore = defineStore({
-    id: 'counter',
+    id: 'map',
     state: () => ({
+        counter: 0,
         showToolBox: true,
         showCompareMap: false,
         drawingPolygon: false,
@@ -31,19 +32,14 @@ export const useMapStore = defineStore({
         wallDisplayTypeIsLine: false,
     }),
     getters: {
-        doubleCount: (state) => state.counter * 2,
+        doubleCount(state) {
+            return this.counter * 2;
+        },
     },
     actions: {
-        toggleMeasure({ commit }, measuring) {
-            commit('TOGGLE_MEASURE', measuring);
-        },
-
-        TOGGLE_MEASURE: (state, measuring) => {
-            state.measuring = measuring;
-        },
-        CHANGE_MAP_STATE: (state, { key, value }) => {
-            if (state.hasOwnProperty(key)) {
-                state[key] = value;
+        CHANGE_MAP_STATE({ key, value }: Record<string, any>) {
+            if (this.hasOwnProperty(key)) {
+                this[key] = value;
             }
         },
     },

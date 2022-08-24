@@ -1,4 +1,13 @@
-import { Map } from 'ol';
+import {
+    tdtVec,
+    tdtVecNotation,
+    tdtSatelite,
+    tdtSateliteNotation,
+} from '@/views/map/olmap-common';
+import {
+    defaults as defaultControls, // 比例尺
+} from 'ol/control';
+import { Map, View } from 'ol';
 import { boundingExtent } from 'ol/extent';
 import { Group, Vector as VectorLayer } from 'ol/layer';
 import type { Vector as VectorSource } from 'ol/source';
@@ -8,6 +17,7 @@ import type { SimpleGeometry } from 'ol/geom';
 import type { StyleFunction, StyleLike } from 'ol/style/Style';
 import type { Style } from 'ol/style';
 import type BaseLayer from 'ol/layer/Base';
+import { fromLonLat } from 'ol/proj';
 
 declare module 'ol/' {
     interface Map {
@@ -78,7 +88,7 @@ export default class EnhanceOlMap extends Map {
         if (!feature) {
             return;
         }
-        var view = this.getView();
+        let view = this.getView();
         const geom = feature.getGeometry();
         geom && view.fit(geom as SimpleGeometry);
         zoom && view.setZoom(zoom);
@@ -125,3 +135,44 @@ export default class EnhanceOlMap extends Map {
         return feas;
     }
 }
+
+export const createMap = (options?: Record<string, any>) => {
+    const chinaView = new View({
+        center: fromLonLat([
+            104.11137264774226, 34.584094621462896,
+        ]) /* 中国中心*/,
+        zoom: 5,
+    });
+
+    const mapElementId = 'olmap';
+    const mapElement = document.querySelector('#' + mapElementId);
+    tdtVec.setVisible(false);
+    tdtVecNotation.setVisible(false);
+    // 多个组件引用同一个vue组件，这个组件又引用同一个tdtSatelite，始终会造成状态不一致问题
+    tdtSatelite.setVisible(true);
+    tdtSateliteNotation.setVisible(true);
+
+    const map: EnhanceOlMap = new EnhanceOlMap({
+        controls: defaultControls({
+            attribution: false,
+            // zoom: !options?.asKanban,
+        }),
+        layers: [
+            tdtSatelite,
+            tdtVec,
+            tdtVecNotation,
+            tdtSateliteNotation /* googleMapLayer */,
+        ],
+        view: chinaView,
+        target: mapElementId,
+    });
+    // 为什么缩放或单击地图时不正确/不正确？ https://openlayers.org/en/latest/doc/faq.html
+    const sizeObserver = new ResizeObserver(() => {
+        console.log('ResizeObserver updateSize');
+        map && map.updateSize();
+    });
+    mapElement && sizeObserver.observe(mapElement);
+
+    return map;
+};
+
