@@ -247,7 +247,7 @@
                     );
                     return;
                 }
-                let dantiTilesetUrlPath;
+                let dantiTilesetUrlPath: string;
                 let url = r.data.url;
                 let urls = [];
                 // 判断有没有逗号, 判断是不是有多个tileset

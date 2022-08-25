@@ -5,7 +5,7 @@ import legacy from '@vitejs/plugin-legacy';
 import vue2 from '@vitejs/plugin-vue2';
 import vue2Jsx from '@vitejs/plugin-vue2-jsx';
 import Unocss from 'unocss/vite';
-import cesium from './vite-plugin-cesium.mjs';
+import cesium from './vite-plugin-cesium';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -26,4 +26,7 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url)),
         },
     },
+    build: {
+        outDir: "docs"
+    }
 });
