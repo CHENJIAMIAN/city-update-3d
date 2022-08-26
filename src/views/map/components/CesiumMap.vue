@@ -1,5 +1,5 @@
 <template>
-    <div class="CesiumMapVue">
+    <div class="CesiumMapVue h-full">
         <div
             id="cesium-container"
             v-loading="loading"
@@ -14,14 +14,6 @@
         <div v-show="!showFlyCesiumMap" class="cesium-viewer-status">
             {{ statustxt }}
         </div>
-        <el-card class="box-card" v-if="isZhongShanQuanyan">
-            <el-checkbox v-model="checkFanwei" label="范围" />
-            <el-checkbox
-                v-model="checkZhongyuanhongxian"
-                title="三乡测绘_实测总图_雅居乐园中园红线"
-                label="雅居乐园中园红线"
-            />
-        </el-card>
     </div>
 </template>
 
@@ -48,9 +40,10 @@
         googleStateliteUrl,
         arcgisStateliteUrl,
     } from '@/views/map/olmap-common';
-    // import { map } from '@/views/map/index.vue';
+    import { map } from '@/views/map/index.vue';
     import { defineComponent } from 'vue';
     import { createCesium } from '@/views/map/components/cesium-earth';
+    import { quanyan_fanwei_geojson } from '../mockdata';
 
     declare module 'vue' {
         interface ComponentCustomProperties {
@@ -79,13 +72,11 @@
                 statustxt: '',
                 //
                 checkFanwei: true,
-                checkZhongyuanhongxian: true,
             };
         },
         computed: {
             ...mapState(useMapStore, {
                 isWallDisplay: (state) => state.isWallDisplay,
-                isZhongShanQuanyan: (state) => state.isZhongShanQuanyan,
                 wallDisplayTypeIsLine: (state) => state.wallDisplayTypeIsLine,
             }),
         },
@@ -105,33 +96,17 @@
                         (n && !this.wallDisplayTypeIsLine) || false;
                 viewer.scene.requestRender();
             },
-            checkZhongyuanhongxian(n, o) {
-                const wallline = viewer?.entities?.values?.find(
-                    (i) => i.name === '雅居乐中园墙体上线'
-                );
-                if (wallline)
-                    wallline.show = (n && this.wallDisplayTypeIsLine) || false;
-                const wallrange = viewer.entities.values.find(
-                    (i) => i.name === '雅居乐中园范围'
-                );
-                if (wallrange)
-                    wallrange.show =
-                        (n && !this.wallDisplayTypeIsLine) || false;
-                viewer.scene.requestRender();
-            },
             isWallDisplay: {
                 handler(n, o) {
                     const { viewer } = this;
-                    if (!this.isZhongShanQuanyan) {
-                        const wallline = viewer?.entities?.values?.find(
-                            (i) => i.name === '墙体上线'
-                        );
-                        if (wallline) wallline.show = n;
-                        const wallrange = viewer.entities.values.find(
-                            (i) => i.name === '墙体范围'
-                        );
-                        if (wallrange) wallrange.show = n;
-                    }
+                    const wallline = viewer?.entities?.values?.find(
+                        (i) => i.name === '墙体上线'
+                    );
+                    if (wallline) wallline.show = n;
+                    const wallrange = viewer.entities.values.find(
+                        (i) => i.name === '墙体范围'
+                    );
+                    if (wallrange) wallrange.show = n;
                     viewer.scene.requestRender();
                 },
             },
@@ -173,9 +148,9 @@
                     this.loaded3DTilesModelFlag = true;
                     // 显示时才加载模型,防止拖慢2d
                     // viewer不存在报错
-                    // this.add3DTilesModel(viewer);
-                    // this.loadNorthNavigator(viewer);
-                    // this.addMeasureTool(viewer);
+                    this.add3DTilesModel(viewer);
+                    this.loadNorthNavigator(viewer);
+                    this.addMeasureTool(viewer);
                 }
             },
         },
@@ -397,14 +372,11 @@
                             if (index === 0) zoomTo();
                             // 加载用于单体话的3dtile
                             if (index === 0 && !this.showFlyCesiumMap) {
+                                // 添加高亮交互 , 墙体范围, 墙体上线
                                 this.add3DTilesClassifyModel(
                                     viewer,
                                     dantiTilesetUrlPath
                                 );
-                                // const subName = this.$parent.buildingGsonUrl.match(
-                                //   /typeName=.*:.*_(.*)&/
-                                // )[1];
-                                // const url = this.$parent.buildingGsonUrl.replace(subName, "fanwei");
                                 const a = this.$parent.buildingGsonUrl;
                                 if (a) {
                                     console.log(a);
@@ -417,173 +389,70 @@
                                         b.slice(0, b.indexOf('_')) + '_fanwei'
                                     );
                                     url = url.replace('EPSG:3857', 'EPSG:4326');
-                                    const isZhongShanQuanyan =
-                                        a.includes('quanyan');
-                                    // 中山泉眼项目特有
-                                    const $store = useMapStore();
-                                    $store.CHANGE_MAP_STATE({
-                                        key: 'isZhongShanQuanyan',
-                                        value: isZhongShanQuanyan,
-                                    });
-                                    if (isZhongShanQuanyan) {
-                                        let url2 = a.replace(
-                                            b,
-                                            b.slice(0, b.indexOf(':')) +
-                                                ':三乡测绘_实测总图_雅居乐园中园红线'
-                                        );
-                                        url2 = url2.replace(
-                                            'EPSG:3857',
-                                            'EPSG:4326'
-                                        );
-                                        fetch(url2)
-                                            .then((r) => r.json())
-                                            .then((r) => {
-                                                let arr0 = [];
-                                                let arr1 = [];
-                                                const geometry =
-                                                    r.features[0].geometry;
-                                                if (
-                                                    geometry.type ===
-                                                    'MultiLineString'
-                                                ) {
-                                                    arr0 =
-                                                        geometry.coordinates[0].slice();
-                                                    arr1 = arr0
-                                                        .map((i) => {
-                                                            i[2] = 50;
-                                                            return i;
-                                                        })
-                                                        .flat(2);
-                                                } else if (
-                                                    geometry.type ===
-                                                    'MultiPolygon'
-                                                ) {
-                                                    arr0 =
-                                                        geometry.coordinates[0][0].slice();
-                                                    arr1 = arr0
-                                                        .map((i) => {
-                                                            i.push(50);
-                                                            return i;
-                                                        })
-                                                        .flat(2);
-                                                }
-                                                const positions =
-                                                    Cesium.Cartesian3.fromDegreesArrayHeights(
-                                                        // arr
-                                                        [
-                                                            ...arr1,
-                                                            ...arr1.slice(3, 6),
-                                                        ] //复制第二个点到最后，不然墙体没有封闭起来
-                                                    );
-                                                window.positions = positions;
+                                    const r = quanyan_fanwei_geojson;
 
-                                                const wall =
-                                                    viewer.entities.add({
-                                                        name: '雅居乐中园范围',
-                                                        wall: {
-                                                            positions,
-                                                            material:
-                                                                Cesium.Color.RED.withAlpha(
-                                                                    0.5
-                                                                ),
-                                                            outline: true,
-                                                        },
-                                                    });
-                                                const wallLine =
-                                                    viewer.entities.add({
-                                                        name: '雅居乐中园墙体上线',
-                                                        show: false,
-                                                        polyline: {
-                                                            positions,
-                                                            width: 2.0,
-                                                            material:
-                                                                Cesium.Color
-                                                                    .RED,
-                                                        },
-                                                    });
+                                    let arr0 = [];
+                                    let arr1 = [];
+                                    const geometry = r.features[0].geometry;
+                                    if (geometry.type === 'MultiLineString') {
+                                        arr0 = geometry.coordinates[0].slice();
+                                        arr1 = arr0
+                                            .map((i) => {
+                                                i[2] = 50;
+                                                return i;
                                             })
-                                            .catch((e) => {
-                                                this.$message.error(
-                                                    'GeoServer配置错误,加载范围失败'
-                                                );
-                                                console.error(e);
-                                            });
+                                            .flat(2);
+                                    } else if (
+                                        geometry.type === 'MultiPolygon'
+                                    ) {
+                                        arr0 =
+                                            geometry.coordinates[0][0].slice();
+                                        arr1 = arr0
+                                            .map((i) => {
+                                                i.push(50);
+                                                return i;
+                                            })
+                                            .flat(2);
                                     }
-                                    fetch(url)
-                                        .then((r) => r.json())
-                                        .then((r) => {
-                                            let arr0 = [];
-                                            let arr1 = [];
-                                            const geometry =
-                                                r.features[0].geometry;
-                                            if (
-                                                geometry.type ===
-                                                'MultiLineString'
-                                            ) {
-                                                arr0 =
-                                                    geometry.coordinates[0].slice();
-                                                arr1 = arr0
-                                                    .map((i) => {
-                                                        i[2] = 50;
-                                                        return i;
-                                                    })
-                                                    .flat(2);
-                                            } else if (
-                                                geometry.type === 'MultiPolygon'
-                                            ) {
-                                                arr0 =
-                                                    geometry.coordinates[0][0].slice();
-                                                arr1 = arr0
-                                                    .map((i) => {
-                                                        i.push(50);
-                                                        return i;
-                                                    })
-                                                    .flat(2);
-                                            }
-                                            const positions =
-                                                Cesium.Cartesian3.fromDegreesArrayHeights(
-                                                    // arr
-                                                    [
-                                                        ...arr1,
-                                                        ...arr1.slice(3, 6),
-                                                    ] //复制第二个点到最后，不然墙体没有封闭起来
-                                                );
-                                            window.positions = positions;
+                                    const positions =
+                                        Cesium.Cartesian3.fromDegreesArrayHeights(
+                                            // arr
+                                            [...arr1, ...arr1.slice(3, 6)] //复制第二个点到最后，不然墙体没有封闭起来
+                                        );
 
-                                            const wall = viewer.entities.add({
-                                                name: '墙体范围',
-                                                wall: {
-                                                    positions,
-                                                    material:
-                                                        Cesium.Color.RED.withAlpha(
-                                                            0.5
-                                                        ),
-                                                    outline: true,
-                                                },
-                                            });
-                                            const wallLine =
-                                                viewer.entities.add({
-                                                    name: '墙体上线',
-                                                    show: false,
-                                                    polyline: {
-                                                        positions,
-                                                        width: 2.0,
-                                                        material:
-                                                            Cesium.Color.RED,
-                                                    },
-                                                });
-                                            // wallLine.definitionChanged.addEventListener(
-                                            //   (origin, property, newValue, oldValue) => {
-                                            //     this.checkFanwei = newValue;
-                                            //   }
-                                            // );
-                                        })
-                                        .catch((e) => {
-                                            this.$message.error(
-                                                'GeoServer配置错误,加载范围失败'
-                                            );
-                                            console.error(e);
-                                        });
+                                    const wall = viewer.entities.add({
+                                        name: '墙体范围',
+                                        wall: {
+                                            positions,
+                                            material:
+                                                Cesium.Color.RED.withAlpha(0.5),
+                                            outline: true,
+                                        },
+                                    });
+                                    const wallLine = viewer.entities.add({
+                                        name: '墙体上线',
+                                        show: false,
+                                        polyline: {
+                                            positions,
+                                            width: 2.0,
+                                            material: Cesium.Color.RED,
+                                        },
+                                    });
+                                    // wallLine.definitionChanged.addEventListener(
+                                    //   (origin, property, newValue, oldValue) => {
+                                    //     this.checkFanwei = newValue;
+                                    //   }
+                                    // );
+
+                                    // fetch(url)
+                                    //     .then((r) => r.json())
+                                    //     .then((r) => {})
+                                    //     .catch((e) => {
+                                    //         this.$message.error(
+                                    //             'GeoServer配置错误,加载范围失败'
+                                    //         );
+                                    //         console.error(e);
+                                    //     });
                                 } else {
                                     this.$message.error(
                                         '没有在模型目录下放置单体3DTiles'
@@ -696,15 +565,17 @@
                 const { measureNumToLocate } = this.$attrs;
                 const annotations = (viewer.measureNumAnnotations =
                     scene.primitives.add(new Cesium.LabelCollection()));
-                const feas = map.getAllBuildingFeas();
+                const feas = map?.getAllBuildingFeas();
 
+                // 根据所有要素去添加建筑物标注
                 const itv1 = setInterval(() => {
-                    if (feas.length > 0) {
+                    if (feas && feas.length > 0) {
                         feas.forEach((fea) => {
                             const fwbh =
                                 fea.getProperties().fwbh ||
                                 fea.getProperties()['测绘编号'];
-                            const extent = fea.getGeometry().getExtent();
+                            const extent = fea?.getGeometry()?.getExtent();
+                            if (!extent) return;
                             let center = getCenter(extent); //获取边界区域的中心位置
                             const coord = transform(
                                 center,
@@ -715,7 +586,6 @@
                                 ...coord,
                                 20.0
                             );
-                            // 根据所有要素去添加建筑物标注
                             annotations.add({
                                 position: cartesian,
                                 text: fwbh,

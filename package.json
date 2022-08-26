@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@turf/turf": "^6.5.0",
-    "cesium": "^1.96.0",
+    "cesium": "1.73.0",
     "element-china-area-data": "^5.0.2",
     "element-ui": "^2.15.9",
     "hammerjs": "^2.0.8",

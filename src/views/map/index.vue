@@ -444,7 +444,7 @@
                     // 用于LayerControl用来控制图层
                     this.baseLayers = layers.concat(defaultBaseLayers as any);
                     // 用于cesium加载
-                    this.buildingGsonUrl = [];
+                    this.buildingGsonUrl = '';
                     // 用于添加建筑物图层们的选中/框选事件
                     this.buildingLayers = [];
                     // WMTS的方式加载

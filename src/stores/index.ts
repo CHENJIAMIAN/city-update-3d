@@ -28,7 +28,6 @@ export const useMapStore = defineStore({
         cesiumViewer: null,
         isDrawingRegion: false,
         isShow3DMeasure: false,
-        isZhongShanQuanyan: false,
         wallDisplayTypeIsLine: false,
     }),
     getters: {

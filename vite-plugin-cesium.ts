@@ -1,4 +1,4 @@
-// 对比原始, 修改了cesiumBuildPath以解决原始_commonjsHelpers文件下划线开头造成github page 404
+// 对比原始, 修改了cesiumBuildPath以解决原始 cesium^1.96.0 _commonjsHelpers文件下划线开头造成github page 404
 // src/index.ts
 import fs from 'fs-extra';
 import path from 'path';
