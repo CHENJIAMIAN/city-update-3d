@@ -67,11 +67,8 @@
                 isMoveMentEventOff: false,
                 hightLightClickedBuildingListener: (evt: Event) => {},
                 // 不要将这里的属性与cesium的相关对象关联,否则cesium相关对象会被劫持,造成性能问题
-                loaded3DTilesModelFlag: false,
                 loading: false,
                 statustxt: '',
-                //
-                checkFanwei: true,
             };
         },
         computed: {
@@ -81,21 +78,6 @@
             }),
         },
         watch: {
-            checkFanwei(n, o) {
-                const { viewer } = this;
-                const wallline = viewer?.entities?.values?.find(
-                    (i) => i.name === '墙体上线'
-                );
-                if (wallline)
-                    wallline.show = (n && this.wallDisplayTypeIsLine) || false;
-                const wallrange = viewer.entities.values.find(
-                    (i) => i.name === '墙体范围'
-                );
-                if (wallrange)
-                    wallrange.show =
-                        (n && !this.wallDisplayTypeIsLine) || false;
-                viewer.scene.requestRender();
-            },
             isWallDisplay: {
                 handler(n, o) {
                     const { viewer } = this;
@@ -143,11 +125,9 @@
                 }
             },
             // 父级切换到3d时，初始化
+            // 显示时才加载模型,防止拖慢2d
             '$parent.is3D'(n, o) {
-                if (n && !this.loaded3DTilesModelFlag) {
-                    this.loaded3DTilesModelFlag = true;
-                    // 显示时才加载模型,防止拖慢2d
-                    // viewer不存在报错
+                if (n) {
                     this.add3DTilesModel(viewer);
                     this.loadNorthNavigator(viewer);
                     this.addMeasureTool(viewer);

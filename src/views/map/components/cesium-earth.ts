@@ -13,7 +13,10 @@ declare module 'cesium' {
         measureNumAnnotations: any;
     }
 }
+
 export const createCesium = () => {
+    // 没有这个会401 地球加载不出来
+    Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZmI0YTI3YS01NzY2LTQ3NmEtOGVmZi0zN2I4MTQ2OWE2YjEiLCJpZCI6MjAxMzIsImlhdCI6MTY2MTUwNTE0Mn0.SPS_UL1EaG0c-s2r1ETbcTj7PPMgz3GQ-eAFBUIlYrk"
     // 默认视图是中国m
     Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Rectangle.fromDegrees(
         90,
@@ -25,7 +28,7 @@ export const createCesium = () => {
         geocoder: false, // 地理位置查询定位控件
         navigationHelpButton: false, // 默认的相机控制提示控件
         fullscreenButton: false, // 全屏控件
-        baseLayerPicker: false, // 底图切换控件
+        baseLayerPicker: !true, // 底图切换控件
         imageryProvider: undefined, //不要默认的bingmap底图
         homeButton: true, // 默认相机位置控件
         animation: true, // 控制场景动画的播放速度控件
