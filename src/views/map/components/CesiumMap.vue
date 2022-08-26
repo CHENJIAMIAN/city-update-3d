@@ -217,7 +217,7 @@
                 const tilesets = (window.tilesets = urls.map(
                     (i) =>
                         new Cesium.Cesium3DTileset({
-                            url: '/gis' + i + '/tileset.json', //数据路径
+                            url: 'gis' + i + '/tileset.json', //数据路径
                             skipLevelOfDetail: true, //确定在遍历期间是否应应用详细程度跳过
                             // skipScreenSpaceErrorFactor: 50,
                             immediatelyLoadDesiredLevelOfDetail: true, //true，只有瓷砖满足最大屏幕空间误差都不会被下载。跳过因子将被忽略，仅加载所需的图块
@@ -470,7 +470,7 @@
                 // });
             },
             add3DTilesClassifyModel(viewer: Viewer, dantiTilesetUrlPath) {
-                let classifcationTilesetUrl = `/gis/${dantiTilesetUrlPath}/danti/tileset.json`;
+                let classifcationTilesetUrl = `gis/${dantiTilesetUrlPath}/danti/tileset.json`;
                 let classificationTileset = (this.classificationTileset =
                     new Cesium.Cesium3DTileset({
                         url: classifcationTilesetUrl,
