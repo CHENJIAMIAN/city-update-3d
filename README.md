@@ -1,3 +1,11 @@
+[English](./README.en.md)
+
+<!-- codex-github-rules:bilingual-summary -->
+> **中文简介**：基于 Vite、Vue 2.7 和 TypeScript 的城市更新二三维 WebGIS 展示
+>
+> **English summary**: A 2D and 3D urban-renewal WebGIS viewer built with Vite, Vue 2.7, and TypeScript
+
+---
 # city-update-3d
 
 This template should help get you started developing with Vue 3 in Vite.
